@@ -6,6 +6,7 @@ import tablesRoutes from "../modules/tables/tables.routes";
 import ordersRoutes from "../modules/orders/orders.routes";
 import kitchenRoutes from "../modules/kitchen/kitchen.routes";
 import billingRoutes from "../modules/billing/billing.routes";
+import reportsRoutes from "../modules/reports/reports.routes";
 import restaurantRoutes from "../modules/restaurant/restaurant.routes";
 
 const router = Router();
@@ -23,6 +24,7 @@ router.use("/tables", tablesRoutes);
 router.use("/orders", ordersRoutes);
 router.use("/kitchen", kitchenRoutes);
 router.use("/billing", billingRoutes);
+router.use("/reports", reportsRoutes);
 
 // Keep this last
 router.use("/restaurants", restaurantRoutes);
