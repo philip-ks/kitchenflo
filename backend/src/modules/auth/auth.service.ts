@@ -1,3 +1,5 @@
+import prisma from "../../lib/prisma";
+
 import {
   hashPassword,
   comparePassword,
@@ -5,34 +7,54 @@ import {
 
 import { generateToken } from "../../services/jwt.service";
 
-const mockUsers: any[] = [];
+import { sanitizeUser } from "../../utils/sanitize";
 
 const registerUser = async (
   data: any
 ) => {
+  // Hash password
   const hashedPassword =
     await hashPassword(data.password);
 
-  const user = {
-    id: Date.now().toString(),
+  // Create restaurant
+  const restaurant =
+    await prisma.restaurant.create({
+      data: {
+        name: `${data.name}'s Restaurant`,
 
-    name: data.name,
+        email: data.email,
+      },
+    });
 
-    email: data.email,
+  // Create user
+  const user = await prisma.user.create({
+    data: {
+      name: data.name,
 
-    password: hashedPassword,
+      email: data.email,
 
-    role: data.role,
-  };
+      password: hashedPassword,
 
-  mockUsers.push(user);
+      role: data.role,
 
+      restaurantId: restaurant.id,
+    },
+  });
+
+  // Return secure response
   return {
-    user,
+    success: true,
+
+    user: sanitizeUser(user),
+
+    restaurant,
 
     token: generateToken({
       id: user.id,
+
       role: user.role,
+
+      restaurantId: restaurant.id,
     }),
   };
 };
@@ -41,14 +63,18 @@ const loginUser = async (
   email: string,
   password: string
 ) => {
-  const user = mockUsers.find(
-    (u) => u.email === email
-  );
+  // Find user
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
 
   if (!user) {
     throw new Error("User not found");
   }
 
+  // Validate password
   const validPassword =
     await comparePassword(
       password,
@@ -59,12 +85,18 @@ const loginUser = async (
     throw new Error("Invalid credentials");
   }
 
+  // Return secure response
   return {
-    user,
+    success: true,
+
+    user: sanitizeUser(user),
 
     token: generateToken({
       id: user.id,
+
       role: user.role,
+
+      restaurantId: user.restaurantId,
     }),
   };
 };

@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -21,7 +21,10 @@ model Restaurant {
   phone     String?
   createdAt DateTime @default(now())
 
-  users User[]
+  users      User[]
+  categories MenuCategory[]
+  items      MenuItem[]
+  tables     RestaurantTable[]
 }
 
 model User {
@@ -35,4 +38,64 @@ model User {
   restaurant Restaurant @relation(fields: [restaurantId], references: [id])
 
   createdAt DateTime @default(now())
+}
+
+model MenuCategory {
+  id           String   @id @default(cuid())
+
+  name         String
+
+  restaurantId String
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  items        MenuItem[]
+
+  createdAt    DateTime @default(now())
+}
+
+model MenuItem {
+  id            String   @id @default(cuid())
+
+  name          String
+
+  description   String?
+
+  price         Float
+
+  available     Boolean  @default(true)
+
+  image         String?
+
+  restaurantId  String
+
+  categoryId    String
+
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+
+  category      MenuCategory @relation(fields: [categoryId], references: [id])
+
+  createdAt     DateTime @default(now())
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+}
+
+model RestaurantTable {
+  id            String   @id @default(cuid())
+
+  name          String
+
+  capacity      Int
+
+  status        TableStatus @default(AVAILABLE)
+
+  restaurantId  String
+
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+
+  createdAt     DateTime @default(now())
 }
