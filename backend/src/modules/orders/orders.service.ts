@@ -1,7 +1,12 @@
 import prisma from "../../lib/prisma";
+import { getIO } from "../../socket";
 
 const generateOrderNumber = () => {
   return `ORD-${Date.now()}`;
+};
+
+const generateKitchenTicketNumber = () => {
+  return `KOT-${Date.now()}`;
 };
 
 const safeCreatedBySelect = {
@@ -38,7 +43,8 @@ const createOrder = async (data: any) => {
       );
     }
 
-    const subtotal = menuItem.price * item.quantity;
+    const subtotal =
+      menuItem.price * item.quantity;
 
     return {
       menuItemId: menuItem.id,
@@ -49,7 +55,8 @@ const createOrder = async (data: any) => {
   });
 
   const totalAmount = orderItems.reduce(
-    (sum: number, item: any) => sum + item.subtotal,
+    (sum: number, item: any) =>
+      sum + item.subtotal,
     0
   );
 
@@ -78,6 +85,20 @@ const createOrder = async (data: any) => {
     },
   });
 
+  await prisma.kitchenTicket.create({
+    data: {
+      ticketNumber:
+        generateKitchenTicketNumber(),
+
+      restaurantId:
+        data.restaurantId,
+
+      orderId: order.id,
+
+      notes: data.notes || null,
+    },
+  });
+
   if (data.tableId) {
     await prisma.restaurantTable.update({
       where: {
@@ -89,10 +110,16 @@ const createOrder = async (data: any) => {
     });
   }
 
+  const io = getIO();
+
+  io.emit("new-order", order);
+
   return order;
 };
 
-const getOrders = async (restaurantId: string) => {
+const getOrders = async (
+  restaurantId: string
+) => {
   return prisma.order.findMany({
     where: {
       restaurantId,
@@ -103,11 +130,14 @@ const getOrders = async (restaurantId: string) => {
           menuItem: true,
         },
       },
+
       table: true,
+
       createdBy: {
         select: safeCreatedBySelect,
       },
     },
+
     orderBy: {
       createdAt: "desc",
     },
@@ -122,14 +152,18 @@ const updateOrderStatus = async (
     where: {
       id: orderId,
     },
+
     data: {
       status,
     },
+
     include: {
       table: true,
+
       createdBy: {
         select: safeCreatedBySelect,
       },
+
       items: {
         include: {
           menuItem: true,
@@ -140,17 +174,27 @@ const updateOrderStatus = async (
 
   if (
     order.tableId &&
-    ["COMPLETED", "CANCELLED"].includes(status)
+    ["COMPLETED", "CANCELLED"].includes(
+      status
+    )
   ) {
     await prisma.restaurantTable.update({
       where: {
         id: order.tableId,
       },
+
       data: {
         status: "AVAILABLE",
       },
     });
   }
+
+  const io = getIO();
+
+  io.emit(
+    "order-status-updated",
+    order
+  );
 
   return order;
 };
