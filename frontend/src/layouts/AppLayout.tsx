@@ -8,6 +8,7 @@ import {
   Table,
   Utensils,
   LogOut,
+  Package,
 } from "lucide-react";
 
 import {
@@ -63,6 +64,12 @@ const menuItems = [
     label: "Menu",
     icon: Utensils,
     path: "/dashboard/menu",
+  },
+
+  {
+    label: "Inventory",
+    icon: Package,
+    path: "/dashboard/inventory",
   },
 ];
 

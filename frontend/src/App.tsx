@@ -25,6 +25,8 @@ import ReportsPage from "./modules/reports/ReportsPage";
 
 import PosPage from "./modules/pos/PosPage";
 
+import InventoryPage from "./modules/inventory/InventoryPage";
+
 function ProtectedRoute({
   children,
 }: {
@@ -113,6 +115,13 @@ export default function App() {
             path="/dashboard/reports"
             element={
               <ReportsPage />
+            }
+          />
+
+          <Route
+            path="/dashboard/inventory"
+            element={
+              <InventoryPage />
             }
           />
         </Route>
