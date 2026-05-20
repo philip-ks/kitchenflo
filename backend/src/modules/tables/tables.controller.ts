@@ -33,7 +33,11 @@ export const getTablesController = async (
   res: Response
 ) => {
   try {
-    const tables = await getTables(req.params.restaurantId);
+    const restaurantId = Array.isArray(req.params.restaurantId)
+      ? req.params.restaurantId[0]
+      : req.params.restaurantId;
+
+    const tables = await getTables(restaurantId);
 
     return res.json({
       success: true,
