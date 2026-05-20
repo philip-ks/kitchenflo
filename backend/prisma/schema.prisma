@@ -12,6 +12,28 @@ enum Role {
   MANAGER
   CASHIER
   CHEF
+  WAITER
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+  DELIVERY
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
 }
 
 model Restaurant {
@@ -25,6 +47,7 @@ model Restaurant {
   categories MenuCategory[]
   items      MenuItem[]
   tables     RestaurantTable[]
+  orders     Order[]
 }
 
 model User {
@@ -34,68 +57,81 @@ model User {
   password     String
   role         Role
   restaurantId String
+  createdAt    DateTime @default(now())
 
   restaurant Restaurant @relation(fields: [restaurantId], references: [id])
 
-  createdAt DateTime @default(now())
+  orders Order[]
 }
 
 model MenuCategory {
   id           String   @id @default(cuid())
-
   name         String
-
   restaurantId String
-
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
-
-  items        MenuItem[]
-
   createdAt    DateTime @default(now())
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  items      MenuItem[]
 }
 
 model MenuItem {
-  id            String   @id @default(cuid())
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  price        Float
+  available    Boolean  @default(true)
+  image        String?
+  restaurantId String
+  categoryId   String
+  createdAt    DateTime @default(now())
 
-  name          String
+  restaurant Restaurant   @relation(fields: [restaurantId], references: [id])
+  category   MenuCategory @relation(fields: [categoryId], references: [id])
 
-  description   String?
-
-  price         Float
-
-  available     Boolean  @default(true)
-
-  image         String?
-
-  restaurantId  String
-
-  categoryId    String
-
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
-
-  category      MenuCategory @relation(fields: [categoryId], references: [id])
-
-  createdAt     DateTime @default(now())
-}
-
-enum TableStatus {
-  AVAILABLE
-  OCCUPIED
-  RESERVED
+  orderItems OrderItem[]
 }
 
 model RestaurantTable {
-  id            String   @id @default(cuid())
+  id           String      @id @default(cuid())
+  name         String
+  capacity     Int
+  status       TableStatus @default(AVAILABLE)
+  restaurantId String
+  createdAt    DateTime    @default(now())
 
-  name          String
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
 
-  capacity      Int
+  orders Order[]
+}
 
-  status        TableStatus @default(AVAILABLE)
+model Order {
+  id           String      @id @default(cuid())
+  orderNumber  String      @unique
+  type         OrderType   @default(DINE_IN)
+  status       OrderStatus @default(PENDING)
+  totalAmount  Float       @default(0)
+  restaurantId String
+  tableId      String?
+  createdById  String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
-  restaurantId  String
+  restaurant Restaurant       @relation(fields: [restaurantId], references: [id])
+  table      RestaurantTable? @relation(fields: [tableId], references: [id])
+  createdBy  User             @relation(fields: [createdById], references: [id])
 
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  items OrderItem[]
+}
 
-  createdAt     DateTime @default(now())
+model OrderItem {
+  id         String   @id @default(cuid())
+  quantity   Int
+  price      Float
+  subtotal   Float
+  orderId    String
+  menuItemId String
+  createdAt  DateTime @default(now())
+
+  order    Order    @relation(fields: [orderId], references: [id])
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
 }
