@@ -1,10 +1,10 @@
 import { Router } from "express";
 
 import authRoutes from "../modules/auth/auth.routes";
-import restaurantRoutes from "../modules/restaurant/restaurant.routes";
 import menuRoutes from "../modules/menu/menu.routes";
-import tableRoutes from "../modules/tables/tables.routes";
-import orderRoutes from "../modules/orders/orders.routes";
+import tablesRoutes from "../modules/tables/tables.routes";
+import ordersRoutes from "../modules/orders/orders.routes";
+import restaurantRoutes from "../modules/restaurant/restaurant.routes";
 
 const router = Router();
 
@@ -16,13 +16,11 @@ router.get("/health", (_req, res) => {
 });
 
 router.use("/auth", authRoutes);
-
-router.use("/restaurants", restaurantRoutes);
-
 router.use("/menu", menuRoutes);
+router.use("/tables", tablesRoutes);
+router.use("/orders", ordersRoutes);
 
-router.use("/tables", tableRoutes);
-
-router.use("/orders", orderRoutes);
+// Keep this last
+router.use("/restaurants", restaurantRoutes);
 
 export default router;

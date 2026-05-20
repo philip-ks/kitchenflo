@@ -1,15 +1,15 @@
 import prisma from "../../lib/prisma";
 
 const createTable = async (data: any) => {
-  return prisma.restaurant.create({
+  return prisma.restaurantTable.create({
     data,
   });
 };
 
 const getTables = async (restaurantId: string) => {
-  return prisma.restaurant.findMany({
+  return prisma.restaurantTable.findMany({
     where: {
-      id: restaurantId,
+      restaurantId,
     },
     orderBy: {
       createdAt: "desc",

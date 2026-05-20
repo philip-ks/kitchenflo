@@ -37,9 +37,11 @@ export const getOrdersController = async (
   res: Response
 ) => {
   try {
-    const orders = await getOrders(
-      req.params.restaurantId
-    );
+    const restaurantId = Array.isArray(req.params.restaurantId)
+      ? req.params.restaurantId[0]
+      : req.params.restaurantId;
+
+    const orders = await getOrders(restaurantId);
 
     return res.json({
       success: true,
@@ -61,8 +63,12 @@ export const updateOrderStatusController = async (
     const validatedData =
       updateOrderStatusSchema.parse(req.body);
 
+    const orderId = Array.isArray(req.params.orderId)
+      ? req.params.orderId[0]
+      : req.params.orderId;
+
     const order = await updateOrderStatus(
-      req.params.orderId,
+      orderId,
       validatedData.status
     );
 
