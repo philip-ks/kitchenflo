@@ -44,6 +44,27 @@ enum KitchenTicketStatus {
   CANCELLED
 }
 
+enum InvoiceStatus {
+  UNPAID
+  PAID
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  UPI
+  WALLET
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
 model Restaurant {
   id        String   @id @default(cuid())
   name      String
@@ -57,6 +78,8 @@ model Restaurant {
   tables         RestaurantTable[]
   orders         Order[]
   kitchenTickets KitchenTicket[]
+  invoices       Invoice[]
+  payments       Payment[]
 }
 
 model User {
@@ -131,6 +154,7 @@ model Order {
 
   items         OrderItem[]
   kitchenTicket KitchenTicket?
+  invoice       Invoice?
 }
 
 model OrderItem {
@@ -158,4 +182,41 @@ model KitchenTicket {
 
   restaurant Restaurant @relation(fields: [restaurantId], references: [id])
   order      Order      @relation(fields: [orderId], references: [id])
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  subtotal      Float
+  taxAmount     Float         @default(0)
+  discount      Float         @default(0)
+  totalAmount   Float
+  status        InvoiceStatus @default(UNPAID)
+
+  restaurantId  String
+  orderId       String        @unique
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id])
+  order         Order         @relation(fields: [orderId], references: [id])
+
+  payments      Payment[]
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  amount        Float
+  method        PaymentMethod
+  status        PaymentStatus @default(COMPLETED)
+  reference     String?
+
+  restaurantId  String
+  invoiceId     String
+
+  createdAt     DateTime      @default(now())
+
+  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id])
+  invoice       Invoice       @relation(fields: [invoiceId], references: [id])
 }

@@ -4,8 +4,9 @@ import authRoutes from "../modules/auth/auth.routes";
 import menuRoutes from "../modules/menu/menu.routes";
 import tablesRoutes from "../modules/tables/tables.routes";
 import ordersRoutes from "../modules/orders/orders.routes";
-import restaurantRoutes from "../modules/restaurant/restaurant.routes";
 import kitchenRoutes from "../modules/kitchen/kitchen.routes";
+import billingRoutes from "../modules/billing/billing.routes";
+import restaurantRoutes from "../modules/restaurant/restaurant.routes";
 
 const router = Router();
 
@@ -21,6 +22,7 @@ router.use("/menu", menuRoutes);
 router.use("/tables", tablesRoutes);
 router.use("/orders", ordersRoutes);
 router.use("/kitchen", kitchenRoutes);
+router.use("/billing", billingRoutes);
 
 // Keep this last
 router.use("/restaurants", restaurantRoutes);
