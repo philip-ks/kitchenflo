@@ -11,11 +11,6 @@ import { useNavigate } from "react-router-dom";
 
 import { api } from "../../services/api";
 
-type MenuCategory = {
-  id: string;
-  name: string;
-};
-
 type MenuItem = {
   id: string;
   name: string;
@@ -40,9 +35,6 @@ type CartItem = {
 export default function PosPage() {
   const navigate = useNavigate();
 
-  const [categories, setCategories] =
-    useState<MenuCategory[]>([]);
-
   const [menuItems, setMenuItems] =
     useState<MenuItem[]>([]);
 
@@ -59,6 +51,9 @@ export default function PosPage() {
   const [loading, setLoading] =
     useState(true);
 
+  const [successMessage, setSuccessMessage] =
+    useState("");
+
   const restaurantId =
     localStorage.getItem(
       "kitchenflo_restaurant_id"
@@ -73,14 +68,9 @@ export default function PosPage() {
   const fetchData = async () => {
     try {
       const [
-        categoriesResponse,
         menuResponse,
         tablesResponse,
       ] = await Promise.all([
-        api.get(
-          `/menu/categories/${restaurantId}`
-        ),
-
         api.get(
           `/menu/items/${restaurantId}`
         ),
@@ -89,10 +79,6 @@ export default function PosPage() {
           `/tables/${restaurantId}`
         ),
       ]);
-
-      setCategories(
-        categoriesResponse.data.data
-      );
 
       setMenuItems(
         menuResponse.data.data
@@ -204,6 +190,18 @@ export default function PosPage() {
 
   const createOrder = async () => {
     try {
+      if (!selectedTable) {
+        alert("Please select a table");
+        return;
+      }
+
+      if (cart.length === 0) {
+        alert(
+          "Please add items to cart"
+        );
+        return;
+      }
+
       const payload = {
         restaurantId,
         tableId: selectedTable,
@@ -216,285 +214,244 @@ export default function PosPage() {
         })),
       };
 
-      await api.post(
+      const response = await api.post(
         "/orders",
         payload
       );
 
-      alert(
-        "✅ Order created successfully"
+      setSuccessMessage(
+        `Order created successfully: ${response.data.data.orderNumber}`
       );
 
       setCart([]);
 
+      setSelectedTable("");
+
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
 
       alert(
-        "Failed to create order"
+        error?.response?.data?.message ||
+          "Failed to create order"
       );
     }
   };
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="text-slate-500">
         Loading POS...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() =>
-              navigate("/dashboard")
-            }
-            className="bg-slate-100 p-2 rounded-xl"
-          >
-            <ArrowLeft size={20} />
-          </button>
+    <div>
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={() =>
+            navigate("/dashboard")
+          }
+          className="p-2 rounded-lg bg-white border"
+        >
+          <ArrowLeft size={18} />
+        </button>
 
-          <div className="bg-slate-900 text-white p-2 rounded-xl">
-            <ShoppingCart size={22} />
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">
+            POS Terminal
+          </h1>
 
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">
-              POS Billing
-            </h1>
-
-            <p className="text-sm text-slate-500">
-              Restaurant billing
-              terminal
-            </p>
-          </div>
+          <p className="text-slate-500">
+            Create and manage orders
+          </p>
         </div>
-      </header>
+      </div>
 
-      <main className="grid grid-cols-1 xl:grid-cols-3 gap-6 p-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold">
-                Menu Items
-              </h2>
+          <div className="mb-8">
+            <h2 className="text-xl font-bold mb-4">
+              Select Table
+            </h2>
 
-              <div className="text-sm text-slate-500">
-                {
-                  menuItems.length
-                }{" "}
-                items
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {menuItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="border border-slate-200 rounded-2xl p-4 hover:shadow-md transition"
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {tables.map((table) => (
+                <button
+                  key={table.id}
+                  onClick={() =>
+                    setSelectedTable(
+                      table.id
+                    )
+                  }
+                  className={`p-4 rounded-2xl border text-left ${
+                    selectedTable ===
+                    table.id
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "bg-white"
+                  }`}
                 >
-                  <h3 className="font-semibold text-slate-900">
-                    {item.name}
+                  <h3 className="font-bold">
+                    {table.name}
                   </h3>
 
-                  <p className="text-sm text-slate-500 mt-1">
-                    {
-                      item.description
-                    }
+                  <p className="text-sm mt-1">
+                    {table.status}
                   </p>
-
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="font-bold text-lg">
-                      ₹
-                      {item.price}
-                    </div>
-
-                    <button
-                      onClick={() =>
-                        addToCart(
-                          item
-                        )
-                      }
-                      className="bg-slate-900 text-white px-3 py-2 rounded-lg text-sm"
-                    >
-                      Add
-                    </button>
-                  </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
-        </div>
 
-        <div>
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 sticky top-6">
-            <h2 className="text-lg font-bold mb-6">
-              Current Cart
+          <div>
+            <h2 className="text-xl font-bold mb-4">
+              Menu Items
             </h2>
 
-            <div className="mb-4">
-              <label className="text-sm font-medium text-slate-700">
-                Select Table
-              </label>
-
-              <select
-                value={
-                  selectedTable
-                }
-                onChange={(e) =>
-                  setSelectedTable(
-                    e.target.value
-                  )
-                }
-                className="w-full mt-2 border border-slate-300 rounded-xl px-3 py-3"
-              >
-                <option value="">
-                  Choose Table
-                </option>
-
-                {tables.map((table) => (
-                  <option
-                    key={table.id}
-                    value={
-                      table.id
-                    }
-                  >
-                    {table.name} (
-                    {
-                      table.status
-                    }
-                    )
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-4 max-h-[400px] overflow-y-auto">
-              {cart.map((item) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {menuItems.map((item) => (
                 <div
                   key={item.id}
-                  className="border border-slate-200 rounded-xl p-3"
+                  className="bg-white p-5 rounded-2xl border"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-medium">
+                      <h3 className="font-bold text-lg">
                         {item.name}
                       </h3>
 
-                      <p className="text-sm text-slate-500">
-                        ₹
-                        {
-                          item.price
-                        }
+                      <p className="text-sm text-slate-500 mt-1">
+                        {item.description}
                       </p>
                     </div>
 
                     <button
                       onClick={() =>
-                        removeItem(
-                          item.id
-                        )
+                        addToCart(item)
                       }
-                      className="text-red-500"
+                      className="bg-slate-900 text-white p-2 rounded-lg"
                     >
-                      <Trash2
-                        size={16}
-                      />
+                      <Plus size={18} />
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-3 mt-3">
-                    <button
-                      onClick={() =>
-                        decreaseQuantity(
-                          item.id
-                        )
-                      }
-                      className="bg-slate-100 p-2 rounded-lg"
-                    >
-                      <Minus
-                        size={16}
-                      />
-                    </button>
-
-                    <div className="font-semibold">
-                      {
-                        item.quantity
-                      }
-                    </div>
-
-                    <button
-                      onClick={() =>
-                        increaseQuantity(
-                          item.id
-                        )
-                      }
-                      className="bg-slate-100 p-2 rounded-lg"
-                    >
-                      <Plus
-                        size={16}
-                      />
-                    </button>
+                  <div className="mt-4 text-xl font-bold">
+                    ₹{item.price}
                   </div>
                 </div>
               ))}
             </div>
-
-            <div className="border-t border-slate-200 mt-6 pt-6 space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span>
-                  Subtotal
-                </span>
-
-                <span>
-                  ₹
-                  {subtotal.toFixed(
-                    2
-                  )}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <span>
-                  Tax (5%)
-                </span>
-
-                <span>
-                  ₹
-                  {tax.toFixed(2)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-lg font-bold">
-                <span>Total</span>
-
-                <span>
-                  ₹
-                  {total.toFixed(2)}
-                </span>
-              </div>
-
-              <button
-                disabled={
-                  cart.length ===
-                    0 ||
-                  !selectedTable
-                }
-                onClick={
-                  createOrder
-                }
-                className="w-full bg-slate-900 text-white py-3 rounded-xl mt-4 disabled:opacity-50"
-              >
-                Create Order
-              </button>
-            </div>
           </div>
         </div>
-      </main>
+
+        <div className="bg-white rounded-3xl border p-6 h-fit sticky top-6">
+          <div className="flex items-center gap-3 mb-6">
+            <ShoppingCart size={24} />
+
+            <h2 className="text-2xl font-bold">
+              Cart
+            </h2>
+          </div>
+
+          <div className="space-y-4">
+            {cart.map((item) => (
+              <div
+                key={item.id}
+                className="border-b pb-4"
+              >
+                <div className="flex justify-between">
+                  <div>
+                    <h3 className="font-semibold">
+                      {item.name}
+                    </h3>
+
+                    <p className="text-sm text-slate-500">
+                      ₹{item.price}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      removeItem(item.id)
+                    }
+                    className="text-red-500"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3 mt-3">
+                  <button
+                    onClick={() =>
+                      decreaseQuantity(
+                        item.id
+                      )
+                    }
+                    className="p-1 border rounded"
+                  >
+                    <Minus size={16} />
+                  </button>
+
+                  <span>
+                    {item.quantity}
+                  </span>
+
+                  <button
+                    onClick={() =>
+                      increaseQuantity(
+                        item.id
+                      )
+                    }
+                    className="p-1 border rounded"
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span>Subtotal</span>
+
+              <span>
+                ₹{subtotal.toFixed(2)}
+              </span>
+            </div>
+
+            <div className="flex justify-between">
+              <span>Tax (5%)</span>
+
+              <span>
+                ₹{tax.toFixed(2)}
+              </span>
+            </div>
+
+            <div className="flex justify-between text-xl font-bold pt-3 border-t">
+              <span>Total</span>
+
+              <span>
+                ₹{total.toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={createOrder}
+            className="w-full mt-6 bg-slate-900 text-white py-4 rounded-2xl font-semibold hover:bg-slate-800"
+          >
+            Create Order
+          </button>
+
+          {successMessage && (
+            <div className="mt-4 p-4 rounded-xl bg-green-100 text-green-700 text-sm">
+              {successMessage}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
