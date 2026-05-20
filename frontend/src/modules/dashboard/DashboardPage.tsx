@@ -15,31 +15,37 @@ const cards = [
     title: "Menu",
     description: "Manage categories and food items",
     icon: Utensils,
+    path: "/dashboard/menu",
   },
   {
     title: "Tables",
     description: "View table occupancy and capacity",
     icon: Table,
+    path: "/dashboard/tables",
   },
   {
     title: "Orders",
     description: "Create and manage POS orders",
     icon: ClipboardList,
+    path: "/dashboard/orders",
   },
   {
     title: "Kitchen",
     description: "Track KOT and kitchen status",
     icon: ChefHat,
+    path: "/dashboard/kitchen",
   },
   {
     title: "Billing",
     description: "Invoices, payments and receipts",
     icon: Receipt,
+    path: "/dashboard/billing",
   },
   {
     title: "Reports",
     description: "Daily sales and payment analytics",
     icon: BarChart3,
+    path: "/dashboard/reports",
   },
 ];
 
@@ -98,9 +104,10 @@ export default function DashboardPage() {
             const Icon = card.icon;
 
             return (
-              <div
+              <button
                 key={card.title}
-                className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition"
+                onClick={() => navigate(card.path)}
+                className="text-left bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer"
               >
                 <div className="bg-slate-100 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
                   <Icon className="text-slate-900" size={24} />
@@ -113,7 +120,7 @@ export default function DashboardPage() {
                 <p className="text-slate-500 text-sm mt-1">
                   {card.description}
                 </p>
-              </div>
+              </button>
             );
           })}
         </div>
