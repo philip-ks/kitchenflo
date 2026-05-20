@@ -105,6 +105,23 @@ const createPayment = async (data: any) => {
     throw new Error("Invoice does not belong to this restaurant");
   }
 
+  const alreadyPaid = invoice.payments.reduce(
+    (sum: number, payment: any) => sum + payment.amount,
+    0
+  );
+
+  const remainingBalance = invoice.totalAmount - alreadyPaid;
+
+  if (remainingBalance <= 0) {
+    throw new Error("Invoice is already fully paid");
+  }
+
+  if (data.amount > remainingBalance) {
+    throw new Error(
+      `Payment exceeds remaining balance. Remaining balance is ${remainingBalance}`
+    );
+  }
+
   const payment = await prisma.payment.create({
     data: {
       restaurantId: data.restaurantId,
@@ -116,11 +133,7 @@ const createPayment = async (data: any) => {
     },
   });
 
-  const totalPaid =
-    invoice.payments.reduce(
-      (sum: number, p: any) => sum + p.amount,
-      0
-    ) + data.amount;
+  const totalPaid = alreadyPaid + data.amount;
 
   if (totalPaid >= invoice.totalAmount) {
     await prisma.invoice.update({
