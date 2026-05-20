@@ -36,6 +36,14 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum KitchenTicketStatus {
+  PENDING
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
 model Restaurant {
   id        String   @id @default(cuid())
   name      String
@@ -43,11 +51,12 @@ model Restaurant {
   phone     String?
   createdAt DateTime @default(now())
 
-  users      User[]
-  categories MenuCategory[]
-  items      MenuItem[]
-  tables     RestaurantTable[]
-  orders     Order[]
+  users          User[]
+  categories     MenuCategory[]
+  items          MenuItem[]
+  tables         RestaurantTable[]
+  orders         Order[]
+  kitchenTickets KitchenTicket[]
 }
 
 model User {
@@ -120,7 +129,8 @@ model Order {
   table      RestaurantTable? @relation(fields: [tableId], references: [id])
   createdBy  User             @relation(fields: [createdById], references: [id])
 
-  items OrderItem[]
+  items         OrderItem[]
+  kitchenTicket KitchenTicket?
 }
 
 model OrderItem {
@@ -134,4 +144,18 @@ model OrderItem {
 
   order    Order    @relation(fields: [orderId], references: [id])
   menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+model KitchenTicket {
+  id           String              @id @default(cuid())
+  ticketNumber String              @unique
+  status       KitchenTicketStatus @default(PENDING)
+  notes        String?
+  restaurantId String
+  orderId      String              @unique
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  order      Order      @relation(fields: [orderId], references: [id])
 }

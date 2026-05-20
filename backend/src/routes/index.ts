@@ -5,6 +5,7 @@ import menuRoutes from "../modules/menu/menu.routes";
 import tablesRoutes from "../modules/tables/tables.routes";
 import ordersRoutes from "../modules/orders/orders.routes";
 import restaurantRoutes from "../modules/restaurant/restaurant.routes";
+import kitchenRoutes from "../modules/kitchen/kitchen.routes";
 
 const router = Router();
 
@@ -19,6 +20,7 @@ router.use("/auth", authRoutes);
 router.use("/menu", menuRoutes);
 router.use("/tables", tablesRoutes);
 router.use("/orders", ordersRoutes);
+router.use("/kitchen", kitchenRoutes);
 
 // Keep this last
 router.use("/restaurants", restaurantRoutes);
