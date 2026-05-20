@@ -3,6 +3,7 @@ import { Router } from "express";
 import authRoutes from "../modules/auth/auth.routes";
 import restaurantRoutes from "../modules/restaurant/restaurant.routes";
 import menuRoutes from "../modules/menu/menu.routes";
+import tableRoutes from "../modules/tables/tables.routes";
 
 const router = Router();
 
@@ -18,5 +19,7 @@ router.use("/auth", authRoutes);
 router.use("/restaurants", restaurantRoutes);
 
 router.use("/menu", menuRoutes);
+
+router.use("/tables", tableRoutes);
 
 export default router;
