@@ -37,7 +37,7 @@ export const getKitchenTicketsController = async (
   res: Response
 ) => {
   try {
-    const tickets = await getKitchenTickets(req.params.restaurantId);
+    const tickets = await getKitchenTickets(String(req.params.restaurantId));
 
     return res.json({
       success: true,
@@ -59,7 +59,7 @@ export const updateKitchenTicketStatusController = async (
     const validatedData = updateKitchenTicketStatusSchema.parse(req.body);
 
     const ticket = await updateKitchenTicketStatus(
-      req.params.ticketId,
+      String(req.params.ticketId),
       validatedData.status
     );
 

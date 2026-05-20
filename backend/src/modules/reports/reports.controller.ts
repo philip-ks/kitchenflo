@@ -8,7 +8,7 @@ export const getDailySalesReportController = async (
 ) => {
   try {
     const report = await getDailySalesReport(
-      req.params.restaurantId
+      String(req.params.restaurantId)
     );
 
     return res.json({

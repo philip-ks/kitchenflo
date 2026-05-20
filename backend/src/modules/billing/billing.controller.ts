@@ -37,7 +37,9 @@ export const getInvoicesController = async (
   res: Response
 ) => {
   try {
-    const invoices = await getInvoices(req.params.restaurantId);
+    const invoices = await getInvoices(
+  String(req.params.restaurantId)
+);
 
     return res.json({
       success: true,
