@@ -5,6 +5,7 @@ import MenuPage from "./modules/menu/MenuPage";
 import TablesPage from "./modules/tables/TablesPage";
 import OrdersPage from "./modules/orders/OrdersPage";
 import KitchenPage from "./modules/kitchen/KitchenPage";
+import BillingPage from "./modules/billing/BillingPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem("kitchenflo_token");
@@ -63,6 +64,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <KitchenPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/billing"
+          element={
+            <ProtectedRoute>
+              <BillingPage />
             </ProtectedRoute>
           }
         />
