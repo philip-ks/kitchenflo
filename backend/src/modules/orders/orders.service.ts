@@ -1,7 +1,5 @@
 import prisma from "../../lib/prisma";
 
-const prismaClient = prisma as any;
-
 const generateOrderNumber = () => {
   return `ORD-${Date.now()}`;
 };
@@ -20,7 +18,7 @@ const createOrder = async (data: any) => {
     (item: any) => item.menuItemId
   );
 
-  const menuItems = await prismaClient.menuItem.findMany({
+  const menuItems = await prisma.menuItem.findMany({
     where: {
       id: {
         in: menuItemIds,
@@ -31,7 +29,7 @@ const createOrder = async (data: any) => {
 
   const orderItems = data.items.map((item: any) => {
     const menuItem = menuItems.find(
-      (m: any) => m.id === item.menuItemId
+      (m) => m.id === item.menuItemId
     );
 
     if (!menuItem) {
@@ -55,7 +53,7 @@ const createOrder = async (data: any) => {
     0
   );
 
-  const order = await prismaClient.order.create({
+  const order = await prisma.order.create({
     data: {
       orderNumber: generateOrderNumber(),
       type: data.type || "DINE_IN",
@@ -81,7 +79,7 @@ const createOrder = async (data: any) => {
   });
 
   if (data.tableId) {
-    await prismaClient.table.update({
+    await prisma.restaurantTable.update({
       where: {
         id: data.tableId,
       },
@@ -95,7 +93,7 @@ const createOrder = async (data: any) => {
 };
 
 const getOrders = async (restaurantId: string) => {
-  return prismaClient.order.findMany({
+  return prisma.order.findMany({
     where: {
       restaurantId,
     },
@@ -120,7 +118,7 @@ const updateOrderStatus = async (
   orderId: string,
   status: any
 ) => {
-  const order = await prismaClient.order.update({
+  const order = await prisma.order.update({
     where: {
       id: orderId,
     },
@@ -144,7 +142,7 @@ const updateOrderStatus = async (
     order.tableId &&
     ["COMPLETED", "CANCELLED"].includes(status)
   ) {
-    await prismaClient.table.update({
+    await prisma.restaurantTable.update({
       where: {
         id: order.tableId,
       },

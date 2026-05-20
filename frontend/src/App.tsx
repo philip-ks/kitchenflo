@@ -3,6 +3,7 @@ import LoginPage from "./modules/auth/LoginPage";
 import DashboardPage from "./modules/dashboard/DashboardPage";
 import MenuPage from "./modules/menu/MenuPage";
 import TablesPage from "./modules/tables/TablesPage";
+import OrdersPage from "./modules/orders/OrdersPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem("kitchenflo_token");
@@ -43,6 +44,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <TablesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/orders"
+          element={
+            <ProtectedRoute>
+              <OrdersPage />
             </ProtectedRoute>
           }
         />
