@@ -31,6 +31,8 @@ import SuppliersPage from "./modules/suppliers/SuppliersPage";
 
 import PurchaseEntryPage from "./modules/purchases/PurchaseEntryPage";
 
+import AnalyticsPage from "./modules/analytics/AnalyticsPage";
+
 function ProtectedRoute({
   children,
 }: {
@@ -142,7 +144,24 @@ export default function App() {
               <PurchaseEntryPage />
             }
           />
+
+          <Route
+            path="/dashboard/analytics"
+            element={
+              <AnalyticsPage />
+            }
+          />
         </Route>
+
+        <Route
+          path="*"
+          element={
+            <Navigate
+              to="/dashboard"
+              replace
+            />
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

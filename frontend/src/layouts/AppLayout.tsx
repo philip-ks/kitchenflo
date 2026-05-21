@@ -11,6 +11,7 @@ import {
   Package,
   Truck,
   ShoppingBag,
+  LineChart,
 } from "lucide-react";
 
 import {
@@ -54,6 +55,12 @@ const menuItems = [
     label: "Reports",
     icon: BarChart3,
     path: "/dashboard/reports",
+  },
+
+  {
+    label: "Analytics",
+    icon: LineChart,
+    path: "/dashboard/analytics",
   },
 
   {
@@ -125,7 +132,7 @@ export default function AppLayout() {
           </p>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
 
@@ -133,6 +140,7 @@ export default function AppLayout() {
               <NavLink
                 key={item.path}
                 to={item.path}
+                end={item.path === "/dashboard"}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-3 rounded-xl transition ${
                     isActive
@@ -152,17 +160,17 @@ export default function AppLayout() {
         <div className="p-4 border-t border-slate-800">
           <div className="mb-4">
             <p className="font-semibold">
-              {user.name}
+              {user.name || "User"}
             </p>
 
             <p className="text-sm text-slate-400">
-              {user.role}
+              {user.role || "Staff"}
             </p>
           </div>
 
           <button
             onClick={logout}
-            className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 py-3 rounded-xl"
+            className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 py-3 rounded-xl transition"
           >
             <LogOut size={18} />
 
