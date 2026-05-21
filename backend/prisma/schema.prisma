@@ -95,7 +95,8 @@ model User {
   restaurantId String
   createdAt    DateTime @default(now())
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant
+    @relation(fields: [restaurantId], references: [id])
 
   orders Order[]
 }
@@ -106,27 +107,40 @@ model MenuCategory {
   restaurantId String
   createdAt    DateTime @default(now())
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant
+    @relation(fields: [restaurantId], references: [id])
 
   items MenuItem[]
 }
 
 model MenuItem {
   id           String   @id @default(cuid())
+
   name         String
+
   description  String?
+
   price        Float
+
   available    Boolean  @default(true)
+
   image        String?
+
   restaurantId String
+
   categoryId   String
+
   createdAt    DateTime @default(now())
 
-  restaurant Restaurant   @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant
+    @relation(fields: [restaurantId], references: [id])
 
-  category MenuCategory @relation(fields: [categoryId], references: [id])
+  category MenuCategory
+    @relation(fields: [categoryId], references: [id])
 
   orderItems OrderItem[]
+
+  recipe Recipe?
 }
 
 model RestaurantTable {
@@ -137,7 +151,8 @@ model RestaurantTable {
   restaurantId String
   createdAt    DateTime    @default(now())
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant
+    @relation(fields: [restaurantId], references: [id])
 
   orders Order[]
 }
@@ -156,11 +171,14 @@ model Order {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant
+    @relation(fields: [restaurantId], references: [id])
 
-  table RestaurantTable? @relation(fields: [tableId], references: [id])
+  table RestaurantTable?
+    @relation(fields: [tableId], references: [id])
 
-  createdBy User @relation(fields: [createdById], references: [id])
+  createdBy User
+    @relation(fields: [createdById], references: [id])
 
   items OrderItem[]
 
@@ -171,22 +189,29 @@ model Order {
 
 model OrderItem {
   id         String   @id @default(cuid())
+
   quantity   Int
+
   price      Float
+
   subtotal   Float
 
   orderId    String
+
   menuItemId String
 
   createdAt  DateTime @default(now())
 
-  order Order @relation(fields: [orderId], references: [id])
+  order Order
+    @relation(fields: [orderId], references: [id])
 
-  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+  menuItem MenuItem
+    @relation(fields: [menuItemId], references: [id])
 }
 
 model KitchenTicket {
   id           String              @id @default(cuid())
+
   ticketNumber String              @unique
 
   status       KitchenTicketStatus @default(PENDING)
@@ -194,18 +219,23 @@ model KitchenTicket {
   notes        String?
 
   restaurantId String
+
   orderId      String              @unique
 
   createdAt    DateTime            @default(now())
+
   updatedAt    DateTime            @updatedAt
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant
+    @relation(fields: [restaurantId], references: [id])
 
-  order Order @relation(fields: [orderId], references: [id])
+  order Order
+    @relation(fields: [orderId], references: [id])
 }
 
 model Invoice {
   id            String        @id @default(cuid())
+
   invoiceNumber String        @unique
 
   subtotal      Float
@@ -223,11 +253,14 @@ model Invoice {
   orderId       String        @unique
 
   createdAt     DateTime      @default(now())
+
   updatedAt     DateTime      @updatedAt
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant
+    @relation(fields: [restaurantId], references: [id])
 
-  order Order @relation(fields: [orderId], references: [id])
+  order Order
+    @relation(fields: [orderId], references: [id])
 
   payments Payment[]
 }
@@ -249,9 +282,11 @@ model Payment {
 
   createdAt     DateTime      @default(now())
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant
+    @relation(fields: [restaurantId], references: [id])
 
-  invoice Invoice @relation(fields: [invoiceId], references: [id])
+  invoice Invoice
+    @relation(fields: [invoiceId], references: [id])
 }
 
 model Ingredient {
@@ -267,9 +302,12 @@ model Ingredient {
 
   restaurantId  String
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant
+    @relation(fields: [restaurantId], references: [id])
 
   stockEntries StockEntry[]
+
+  recipeIngredients RecipeIngredient[]
 
   createdAt DateTime @default(now())
 
@@ -287,7 +325,8 @@ model Supplier {
 
   restaurantId  String
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant
+    @relation(fields: [restaurantId], references: [id])
 
   stockEntries StockEntry[]
 
@@ -299,7 +338,8 @@ model StockEntry {
 
   ingredientId  String
 
-  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+  ingredient Ingredient
+    @relation(fields: [ingredientId], references: [id])
 
   quantity      Float
 
@@ -307,11 +347,44 @@ model StockEntry {
 
   supplierId    String?
 
-  supplier Supplier? @relation(fields: [supplierId], references: [id])
+  supplier Supplier?
+    @relation(fields: [supplierId], references: [id])
 
   restaurantId  String
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant
+    @relation(fields: [restaurantId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Recipe {
+  id          String   @id @default(cuid())
+
+  menuItemId  String   @unique
+
+  menuItem    MenuItem
+    @relation(fields: [menuItemId], references: [id])
+
+  createdAt   DateTime @default(now())
+
+  ingredients RecipeIngredient[]
+}
+
+model RecipeIngredient {
+  id            String   @id @default(cuid())
+
+  recipeId      String
+
+  ingredientId  String
+
+  quantity      Float
+
+  recipe Recipe
+    @relation(fields: [recipeId], references: [id])
+
+  ingredient Ingredient
+    @relation(fields: [ingredientId], references: [id])
 
   createdAt DateTime @default(now())
 }
