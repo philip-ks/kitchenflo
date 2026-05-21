@@ -10,6 +10,7 @@ import {
   LogOut,
   Package,
   Truck,
+  ShoppingBag,
 } from "lucide-react";
 
 import {
@@ -77,6 +78,12 @@ const menuItems = [
     label: "Suppliers",
     icon: Truck,
     path: "/dashboard/suppliers",
+  },
+
+  {
+    label: "Purchases",
+    icon: ShoppingBag,
+    path: "/dashboard/purchases",
   },
 ];
 

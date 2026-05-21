@@ -29,6 +29,8 @@ import InventoryPage from "./modules/inventory/InventoryPage";
 
 import SuppliersPage from "./modules/suppliers/SuppliersPage";
 
+import PurchaseEntryPage from "./modules/purchases/PurchaseEntryPage";
+
 function ProtectedRoute({
   children,
 }: {
@@ -131,6 +133,13 @@ export default function App() {
             path="/dashboard/suppliers"
             element={
               <SuppliersPage />
+            }
+          />
+
+          <Route
+            path="/dashboard/purchases"
+            element={
+              <PurchaseEntryPage />
             }
           />
         </Route>
