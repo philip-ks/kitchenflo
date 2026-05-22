@@ -11,6 +11,9 @@ import { sanitizeUser } from "../../utils/sanitize";
 
 import { OAuth2Client } from "google-auth-library";
 
+import jwt from "jsonwebtoken";
+import jwksClient from "jwks-rsa";
+
 const registerUser = async (data: any) => {
   const existingUser =
     await prisma.user.findUnique({
@@ -93,6 +96,51 @@ const loginUser = async (
   };
 };
 
+const findOrCreateOAuthUser = async (
+  email: string,
+  name: string
+) => {
+  let user =
+    await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+  let restaurant = null;
+
+  if (!user) {
+    const randomPassword =
+      await hashPassword(
+        `oauth_${Date.now()}_${email}`
+      );
+
+    restaurant =
+      await prisma.restaurant.create({
+        data: {
+          name: `${name}'s Restaurant`,
+          email,
+        },
+      });
+
+    user =
+      await prisma.user.create({
+        data: {
+          name,
+          email,
+          password: randomPassword,
+          role: "OWNER",
+          restaurantId: restaurant.id,
+        },
+      });
+  }
+
+  return {
+    user,
+    restaurant,
+  };
+};
+
 const loginWithGoogle = async (
   credential: string
 ) => {
@@ -104,11 +152,6 @@ const loginWithGoogle = async (
       "Google Client ID is not configured"
     );
   }
-
-  console.log(
-    "Backend GOOGLE_CLIENT_ID:",
-    googleClientId
-  );
 
   const googleClient =
     new OAuth2Client(googleClientId);
@@ -134,40 +177,113 @@ const loginWithGoogle = async (
     payload.name ||
     email.split("@")[0];
 
-  let user =
-    await prisma.user.findUnique({
-      where: {
-        email,
-      },
+  const {
+    user,
+    restaurant,
+  } = await findOrCreateOAuthUser(
+    email,
+    name
+  );
+
+  return {
+    success: true,
+    user: sanitizeUser(user),
+    restaurant,
+    token: generateToken({
+      id: user.id,
+      role: user.role,
+      restaurantId: user.restaurantId,
+    }),
+  };
+};
+
+const verifyMicrosoftToken = async (
+  idToken: string
+): Promise<any> => {
+  const microsoftClientId =
+    process.env.MICROSOFT_CLIENT_ID;
+
+  const microsoftTenantId =
+    process.env.MICROSOFT_TENANT_ID || "common";
+
+  if (!microsoftClientId) {
+    throw new Error(
+      "Microsoft Client ID is not configured"
+    );
+  }
+
+  const decodedHeader: any =
+    jwt.decode(idToken, {
+      complete: true,
     });
 
-  let restaurant = null;
-
-  if (!user) {
-    const randomPassword =
-      await hashPassword(
-        `google_${Date.now()}_${email}`
-      );
-
-    restaurant =
-      await prisma.restaurant.create({
-        data: {
-          name: `${name}'s Restaurant`,
-          email,
-        },
-      });
-
-    user =
-      await prisma.user.create({
-        data: {
-          name,
-          email,
-          password: randomPassword,
-          role: "OWNER",
-          restaurantId: restaurant.id,
-        },
-      });
+  if (!decodedHeader?.header?.kid) {
+    throw new Error(
+      "Invalid Microsoft token header"
+    );
   }
+
+  const tenantForKeys =
+    microsoftTenantId === "common"
+      ? "common"
+      : microsoftTenantId;
+
+  const client =
+    jwksClient({
+      jwksUri:
+        `https://login.microsoftonline.com/${tenantForKeys}/discovery/v2.0/keys`,
+    });
+
+  const key =
+    await client.getSigningKey(
+      decodedHeader.header.kid
+    );
+
+  const signingKey =
+    key.getPublicKey();
+
+  return jwt.verify(
+    idToken,
+    signingKey,
+    {
+      algorithms: ["RS256"],
+      audience: microsoftClientId,
+    }
+  );
+};
+
+const loginWithMicrosoft = async (
+  credential: string
+) => {
+  const payload =
+    await verifyMicrosoftToken(
+      credential
+    );
+
+  const email =
+    (
+      payload.preferred_username ||
+      payload.email ||
+      payload.upn
+    )?.toLowerCase();
+
+  if (!email) {
+    throw new Error(
+      "Microsoft account email not found"
+    );
+  }
+
+  const name =
+    payload.name ||
+    email.split("@")[0];
+
+  const {
+    user,
+    restaurant,
+  } = await findOrCreateOAuthUser(
+    email,
+    name
+  );
 
   return {
     success: true,
@@ -185,4 +301,5 @@ export {
   registerUser,
   loginUser,
   loginWithGoogle,
+  loginWithMicrosoft,
 };

@@ -19,3 +19,7 @@ export const loginSchema = z.object({
 export const googleLoginSchema = z.object({
   credential: z.string().min(10),
 });
+
+export const microsoftLoginSchema = z.object({
+  credential: z.string().min(10),
+});

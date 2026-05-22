@@ -4,12 +4,14 @@ import {
   registerUser,
   loginUser,
   loginWithGoogle,
+  loginWithMicrosoft,
 } from "./auth.service";
 
 import {
   registerSchema,
   loginSchema,
   googleLoginSchema,
+  microsoftLoginSchema,
 } from "./auth.schema";
 
 export const register = async (
@@ -84,6 +86,33 @@ export const googleLogin = async (
       message:
         error.message ||
         "Google login failed",
+    });
+  }
+};
+
+export const microsoftLogin = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const validatedData =
+      microsoftLoginSchema.parse(req.body);
+
+    const result =
+      await loginWithMicrosoft(
+        validatedData.credential
+      );
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message:
+        error.message ||
+        "Microsoft login failed",
     });
   }
 };

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
+import { useMsal } from "@azure/msal-react";
 
 import {
   Eye,
@@ -12,12 +13,15 @@ import {
   BarChart3,
   Package,
   Utensils,
+  LogIn,
 } from "lucide-react";
 
 import { api } from "../../services/api";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+
+  const { instance } = useMsal();
 
   const [email, setEmail] = useState("philip2@test.com");
   const [password, setPassword] = useState("123456");
@@ -33,6 +37,43 @@ export default function LoginPage() {
 
     navigate("/dashboard");
   };
+
+  useEffect(() => {
+    const completeMicrosoftLogin = async () => {
+      try {
+        const result = await instance.handleRedirectPromise();
+
+        if (!result?.idToken) {
+          return;
+        }
+
+        setLoading(true);
+        setError("");
+
+        const response = await api.post("/auth/microsoft", {
+          credential: result.idToken,
+        });
+
+        const token = response.data.data.token;
+        const user = response.data.data.user;
+
+        saveSession(token, user);
+      } catch (err: any) {
+        console.error("Microsoft redirect login error:", err);
+
+        setError(
+          err?.response?.data?.message ||
+            err?.errorMessage ||
+            err?.message ||
+            "Microsoft login failed."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    completeMicrosoftLogin();
+  }, [instance]);
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -98,6 +139,25 @@ export default function LoginPage() {
     }
   };
 
+  const handleMicrosoftLogin = async () => {
+    try {
+      setError("");
+
+      await instance.loginRedirect({
+        scopes: ["openid", "profile", "email"],
+        prompt: "select_account",
+      });
+    } catch (err: any) {
+      console.error("Microsoft login error:", err);
+
+      setError(
+        err?.errorMessage ||
+          err?.message ||
+          "Microsoft login failed."
+      );
+    }
+  };
+
   const useDemoLogin = () => {
     setEmail("philip2@test.com");
     setPassword("123456");
@@ -119,7 +179,10 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <h1 className="text-3xl font-bold">KitchenFlo</h1>
+                <h1 className="text-3xl font-bold">
+                  KitchenFlo
+                </h1>
+
                 <p className="text-sm text-slate-400">
                   Restaurant Operations Platform
                 </p>
@@ -145,7 +208,11 @@ export default function LoginPage() {
             <div className="mt-12 grid max-w-xl grid-cols-2 gap-4">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <Utensils className="mb-4 text-emerald-300" />
-                <h3 className="font-semibold">Fast POS</h3>
+
+                <h3 className="font-semibold">
+                  Fast POS
+                </h3>
+
                 <p className="mt-2 text-sm text-slate-400">
                   QSR, takeaway, dine-in, and delivery-ready order flow.
                 </p>
@@ -153,7 +220,11 @@ export default function LoginPage() {
 
               <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <Package className="mb-4 text-emerald-300" />
-                <h3 className="font-semibold">Inventory Intelligence</h3>
+
+                <h3 className="font-semibold">
+                  Inventory Intelligence
+                </h3>
+
                 <p className="mt-2 text-sm text-slate-400">
                   Recipe-based stock deduction and low-stock visibility.
                 </p>
@@ -161,7 +232,11 @@ export default function LoginPage() {
 
               <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <BarChart3 className="mb-4 text-emerald-300" />
-                <h3 className="font-semibold">Profit Analytics</h3>
+
+                <h3 className="font-semibold">
+                  Profit Analytics
+                </h3>
+
                 <p className="mt-2 text-sm text-slate-400">
                   Food cost, margin, consumption, and procurement insights.
                 </p>
@@ -169,7 +244,11 @@ export default function LoginPage() {
 
               <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <ShieldCheck className="mb-4 text-emerald-300" />
-                <h3 className="font-semibold">Secure Access</h3>
+
+                <h3 className="font-semibold">
+                  Secure Access
+                </h3>
+
                 <p className="mt-2 text-sm text-slate-400">
                   JWT authentication with restaurant-specific data access.
                 </p>
@@ -190,7 +269,9 @@ export default function LoginPage() {
                 <ChefHat size={28} />
               </div>
 
-              <h1 className="text-3xl font-bold">KitchenFlo</h1>
+              <h1 className="text-3xl font-bold">
+                KitchenFlo
+              </h1>
 
               <p className="mt-2 text-slate-500">
                 Restaurant Operations Platform
@@ -225,13 +306,24 @@ export default function LoginPage() {
                   text="continue_with"
                   shape="rectangular"
                 />
+
+                <button
+                  type="button"
+                  onClick={handleMicrosoftLogin}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  <LogIn size={18} />
+                  Continue with Microsoft
+                </button>
               </div>
 
               <div className="mb-5 flex items-center gap-3">
                 <div className="h-px flex-1 bg-slate-200" />
+
                 <span className="text-xs font-semibold text-slate-400">
                   OR
                 </span>
+
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
 
@@ -283,7 +375,11 @@ export default function LoginPage() {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
                     >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      {showPassword ? (
+                        <EyeOff size={18} />
+                      ) : (
+                        <Eye size={18} />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -314,11 +410,17 @@ export default function LoginPage() {
                     </p>
 
                     <p className="mt-3 text-xs text-slate-600">
-                      Email: <span className="font-semibold">philip2@test.com</span>
+                      Email:{" "}
+                      <span className="font-semibold">
+                        philip2@test.com
+                      </span>
                     </p>
 
                     <p className="text-xs text-slate-600">
-                      Password: <span className="font-semibold">123456</span>
+                      Password:{" "}
+                      <span className="font-semibold">
+                        123456
+                      </span>
                     </p>
                   </div>
 
