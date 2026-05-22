@@ -8,32 +8,22 @@ import {
 import AppLayout from "./layouts/AppLayout";
 
 import LoginPage from "./modules/auth/LoginPage";
+import GitHubCallbackPage from "./modules/auth/GitHubCallbackPage";
 
 import DashboardPage from "./modules/dashboard/DashboardPage";
-
 import MenuPage from "./modules/menu/MenuPage";
-
 import TablesPage from "./modules/tables/TablesPage";
-
 import OrdersPage from "./modules/orders/OrdersPage";
-
 import KitchenPage from "./modules/kitchen/KitchenPage";
-
 import BillingPage from "./modules/billing/BillingPage";
-
 import ReportsPage from "./modules/reports/ReportsPage";
-
 import PosPage from "./modules/pos/PosPage";
-
 import InventoryPage from "./modules/inventory/InventoryPage";
-
 import SuppliersPage from "./modules/suppliers/SuppliersPage";
-
 import PurchaseEntryPage from "./modules/purchases/PurchaseEntryPage";
-
 import AnalyticsPage from "./modules/analytics/AnalyticsPage";
-
 import RecipesPage from "./modules/recipes/RecipesPage";
+import ProfilePage from "./modules/profile/ProfilePage";
 
 function ProtectedRoute({
   children,
@@ -66,6 +56,11 @@ export default function App() {
         />
 
         <Route
+          path="/auth/github/callback"
+          element={<GitHubCallbackPage />}
+        />
+
+        <Route
           element={
             <ProtectedRoute>
               <AppLayout />
@@ -74,9 +69,12 @@ export default function App() {
         >
           <Route
             path="/dashboard"
-            element={
-              <DashboardPage />
-            }
+            element={<DashboardPage />}
+          />
+
+          <Route
+            path="/dashboard/profile"
+            element={<ProfilePage />}
           />
 
           <Route
@@ -86,79 +84,57 @@ export default function App() {
 
           <Route
             path="/dashboard/menu"
-            element={
-              <MenuPage />
-            }
-          />
-
-          <Route
-            path="/dashboard/recipes"
-            element={
-              <RecipesPage />
-            }
+            element={<MenuPage />}
           />
 
           <Route
             path="/dashboard/tables"
-            element={
-              <TablesPage />
-            }
+            element={<TablesPage />}
           />
 
           <Route
             path="/dashboard/orders"
-            element={
-              <OrdersPage />
-            }
+            element={<OrdersPage />}
           />
 
           <Route
             path="/dashboard/kitchen"
-            element={
-              <KitchenPage />
-            }
+            element={<KitchenPage />}
           />
 
           <Route
             path="/dashboard/billing"
-            element={
-              <BillingPage />
-            }
+            element={<BillingPage />}
           />
 
           <Route
             path="/dashboard/reports"
-            element={
-              <ReportsPage />
-            }
-          />
-
-          <Route
-            path="/dashboard/inventory"
-            element={
-              <InventoryPage />
-            }
-          />
-
-          <Route
-            path="/dashboard/suppliers"
-            element={
-              <SuppliersPage />
-            }
-          />
-
-          <Route
-            path="/dashboard/purchases"
-            element={
-              <PurchaseEntryPage />
-            }
+            element={<ReportsPage />}
           />
 
           <Route
             path="/dashboard/analytics"
-            element={
-              <AnalyticsPage />
-            }
+            element={<AnalyticsPage />}
+          />
+
+          <Route
+            path="/dashboard/recipes"
+            element={<RecipesPage />}
+          />
+
+          <Route
+            path="/dashboard/inventory"
+            element={<InventoryPage />}
+          />
+
+          <Route
+            path="/dashboard/suppliers"
+            element={<SuppliersPage />}
+          />
+
+          <Route
+            path="/dashboard/purchases"
+            element={<PurchaseEntryPage />}
           />
         </Route>
 

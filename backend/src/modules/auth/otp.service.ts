@@ -89,11 +89,11 @@ export const verifyPhoneOtp = async (
   otpStore.delete(normalizedPhone);
 
   let user =
-    await prisma.user.findUnique({
-      where: {
-        phone: normalizedPhone,
-      },
-    });
+  await prisma.user.findFirst({
+    where: {
+      phone: normalizedPhone,
+    } as any,
+  });
 
   let restaurant = null;
 

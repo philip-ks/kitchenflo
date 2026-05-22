@@ -8,6 +8,7 @@ import kitchenRoutes from "../modules/kitchen/kitchen.routes";
 import billingRoutes from "../modules/billing/billing.routes";
 import reportsRoutes from "../modules/reports/reports.routes";
 import restaurantRoutes from "../modules/restaurant/restaurant.routes";
+import profileRoutes from "../modules/profile/profile.routes";
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.use("/orders", ordersRoutes);
 router.use("/kitchen", kitchenRoutes);
 router.use("/billing", billingRoutes);
 router.use("/reports", reportsRoutes);
+router.use("/profile", profileRoutes);
 
 // Keep this last
 router.use("/restaurants", restaurantRoutes);

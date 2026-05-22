@@ -13,6 +13,7 @@ import {
   ShoppingBag,
   LineChart,
   BookOpen,
+  UserCircle,
 } from "lucide-react";
 
 import {
@@ -26,6 +27,12 @@ const menuItems = [
     label: "Dashboard",
     icon: LayoutDashboard,
     path: "/dashboard",
+  },
+
+  {
+    label: "Profile",
+    icon: UserCircle,
+    path: "/dashboard/profile",
   },
 
   {
