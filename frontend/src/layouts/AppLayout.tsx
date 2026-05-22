@@ -12,6 +12,7 @@ import {
   Truck,
   ShoppingBag,
   LineChart,
+  BookOpen,
 } from "lucide-react";
 
 import {
@@ -73,6 +74,12 @@ const menuItems = [
     label: "Menu",
     icon: Utensils,
     path: "/dashboard/menu",
+  },
+
+  {
+    label: "Recipes",
+    icon: BookOpen,
+    path: "/dashboard/recipes",
   },
 
   {

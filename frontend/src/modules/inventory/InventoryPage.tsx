@@ -13,6 +13,7 @@ type Ingredient = {
   unit: string;
   currentStock: number;
   minimumStock: number;
+  costPerUnit: number;
 };
 
 export default function InventoryPage() {
@@ -22,15 +23,22 @@ export default function InventoryPage() {
   const [loading, setLoading] =
     useState(true);
 
+  const [saving, setSaving] =
+    useState(false);
+
   const [showForm, setShowForm] =
     useState(false);
+
+  const [errorMessage, setErrorMessage] =
+    useState("");
 
   const [formData, setFormData] =
     useState({
       name: "",
       unit: "",
-      currentStock: 0,
-      minimumStock: 0,
+      currentStock: "",
+      minimumStock: "",
+      costPerUnit: "",
     });
 
   const restaurantId =
@@ -41,32 +49,88 @@ export default function InventoryPage() {
   const fetchIngredients =
     async () => {
       try {
+        setLoading(true);
+        setErrorMessage("");
+
         const response =
           await api.get(
             `/inventory/ingredients/${restaurantId}`
           );
 
+        const data =
+          response.data.data ||
+          response.data.ingredients ||
+          response.data ||
+          [];
+
         setIngredients(
-          response.data.data || []
+          Array.isArray(data) ? data : []
         );
-      } catch (error) {
-        console.error(error);
+      } catch (error: any) {
+        console.error(
+          "Failed to fetch ingredients:",
+          error
+        );
+
+        setErrorMessage(
+          error?.response?.data?.message ||
+            "Failed to load ingredients."
+        );
       } finally {
         setLoading(false);
       }
     };
 
   useEffect(() => {
-    fetchIngredients();
+    if (restaurantId) {
+      fetchIngredients();
+    } else {
+      setLoading(false);
+      setErrorMessage(
+        "Restaurant ID not found. Please login again."
+      );
+    }
   }, []);
 
   const createIngredient =
     async () => {
       try {
+        setErrorMessage("");
+
+        if (!restaurantId) {
+          setErrorMessage(
+            "Restaurant ID not found. Please login again."
+          );
+          return;
+        }
+
+        if (!formData.name.trim()) {
+          setErrorMessage(
+            "Ingredient name is required."
+          );
+          return;
+        }
+
+        if (!formData.unit.trim()) {
+          setErrorMessage(
+            "Unit is required."
+          );
+          return;
+        }
+
+        setSaving(true);
+
         await api.post(
           "/inventory/ingredients",
           {
-            ...formData,
+            name: formData.name.trim(),
+            unit: formData.unit.trim(),
+            currentStock:
+              Number(formData.currentStock) || 0,
+            minimumStock:
+              Number(formData.minimumStock) || 0,
+            costPerUnit:
+              Number(formData.costPerUnit) || 0,
             restaurantId,
           }
         );
@@ -74,23 +138,34 @@ export default function InventoryPage() {
         setFormData({
           name: "",
           unit: "",
-          currentStock: 0,
-          minimumStock: 0,
+          currentStock: "",
+          minimumStock: "",
+          costPerUnit: "",
         });
 
         setShowForm(false);
 
-        fetchIngredients();
-      } catch (error) {
-        console.error(error);
+        await fetchIngredients();
+      } catch (error: any) {
+        console.error(
+          "Failed to create ingredient:",
+          error
+        );
+
+        setErrorMessage(
+          error?.response?.data?.message ||
+            "Failed to save ingredient. Please check backend logs."
+        );
+      } finally {
+        setSaving(false);
       }
     };
 
   const lowStockItems =
     ingredients.filter(
       (item) =>
-        item.currentStock <=
-        item.minimumStock
+        Number(item.currentStock) <=
+        Number(item.minimumStock)
     );
 
   return (
@@ -102,7 +177,7 @@ export default function InventoryPage() {
           </h1>
 
           <p className="text-slate-500 mt-1">
-            Manage ingredients and stock levels
+            Manage ingredients, stock levels, and costing
           </p>
         </div>
 
@@ -116,6 +191,12 @@ export default function InventoryPage() {
           Add Ingredient
         </button>
       </div>
+
+      {errorMessage && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
+          {errorMessage}
+        </div>
+      )}
 
       {lowStockItems.length > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6">
@@ -136,13 +217,10 @@ export default function InventoryPage() {
                 key={item.id}
                 className="flex justify-between text-sm"
               >
-                <span>
-                  {item.name}
-                </span>
+                <span>{item.name}</span>
 
                 <span className="font-semibold text-red-600">
-                  {item.currentStock}{" "}
-                  {item.unit}
+                  {item.currentStock} {item.unit}
                 </span>
               </div>
             ))}
@@ -186,16 +264,12 @@ export default function InventoryPage() {
             <input
               type="number"
               placeholder="Current Stock"
-              value={
-                formData.currentStock
-              }
+              value={formData.currentStock}
               onChange={(e) =>
                 setFormData({
                   ...formData,
                   currentStock:
-                    Number(
-                      e.target.value
-                    ),
+                    e.target.value,
                 })
               }
               className="border border-slate-300 rounded-xl px-4 py-3"
@@ -204,27 +278,40 @@ export default function InventoryPage() {
             <input
               type="number"
               placeholder="Minimum Stock"
-              value={
-                formData.minimumStock
-              }
+              value={formData.minimumStock}
               onChange={(e) =>
                 setFormData({
                   ...formData,
                   minimumStock:
-                    Number(
-                      e.target.value
-                    ),
+                    e.target.value,
                 })
               }
               className="border border-slate-300 rounded-xl px-4 py-3"
+            />
+
+            <input
+              type="number"
+              placeholder="Cost Per Unit"
+              value={formData.costPerUnit}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  costPerUnit:
+                    e.target.value,
+                })
+              }
+              className="border border-slate-300 rounded-xl px-4 py-3 md:col-span-2"
             />
           </div>
 
           <button
             onClick={createIngredient}
-            className="mt-4 bg-slate-900 text-white px-5 py-3 rounded-xl"
+            disabled={saving}
+            className="mt-4 bg-slate-900 text-white px-5 py-3 rounded-xl disabled:opacity-60"
           >
-            Save Ingredient
+            {saving
+              ? "Saving..."
+              : "Save Ingredient"}
           </button>
         </div>
       )}
@@ -263,8 +350,8 @@ export default function InventoryPage() {
                   />
                 </div>
 
-                {item.currentStock <=
-                  item.minimumStock && (
+                {Number(item.currentStock) <=
+                  Number(item.minimumStock) && (
                   <span className="bg-red-100 text-red-700 text-xs px-3 py-1 rounded-full">
                     Low Stock
                   </span>
@@ -282,8 +369,7 @@ export default function InventoryPage() {
                   </span>
 
                   <span className="font-semibold">
-                    {item.currentStock}{" "}
-                    {item.unit}
+                    {item.currentStock} {item.unit}
                   </span>
                 </div>
 
@@ -293,8 +379,20 @@ export default function InventoryPage() {
                   </span>
 
                   <span className="font-semibold">
-                    {item.minimumStock}{" "}
-                    {item.unit}
+                    {item.minimumStock} {item.unit}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-slate-500">
+                    Cost / Unit
+                  </span>
+
+                  <span className="font-semibold">
+                    ₹
+                    {Number(
+                      item.costPerUnit || 0
+                    ).toFixed(2)}
                   </span>
                 </div>
               </div>

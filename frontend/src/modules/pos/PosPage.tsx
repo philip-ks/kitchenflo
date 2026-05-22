@@ -11,6 +11,8 @@ import { useNavigate } from "react-router-dom";
 
 import { api } from "../../services/api";
 
+type OrderType = "DINE_IN" | "TAKEAWAY" | "DELIVERY";
+
 type MenuItem = {
   id: string;
   name: string;
@@ -35,15 +37,12 @@ type CartItem = {
 export default function PosPage() {
   const navigate = useNavigate();
 
-  const [menuItems, setMenuItems] =
-    useState<MenuItem[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [tables, setTables] = useState<RestaurantTable[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
 
-  const [tables, setTables] =
-    useState<RestaurantTable[]>([]);
-
-  const [cart, setCart] = useState<
-    CartItem[]
-  >([]);
+  const [orderType, setOrderType] =
+    useState<OrderType>("TAKEAWAY");
 
   const [selectedTable, setSelectedTable] =
     useState("");
@@ -51,42 +50,31 @@ export default function PosPage() {
   const [loading, setLoading] =
     useState(true);
 
+  const [creating, setCreating] =
+    useState(false);
+
   const [successMessage, setSuccessMessage] =
     useState("");
 
   const restaurantId =
-    localStorage.getItem(
-      "kitchenflo_restaurant_id"
-    );
+    localStorage.getItem("kitchenflo_restaurant_id");
 
   const user = JSON.parse(
-    localStorage.getItem(
-      "kitchenflo_user"
-    ) || "{}"
+    localStorage.getItem("kitchenflo_user") || "{}"
   );
 
   const fetchData = async () => {
     try {
-      const [
-        menuResponse,
-        tablesResponse,
-      ] = await Promise.all([
-        api.get(
-          `/menu/items/${restaurantId}`
-        ),
+      setLoading(true);
 
-        api.get(
-          `/tables/${restaurantId}`
-        ),
-      ]);
+      const [menuResponse, tablesResponse] =
+        await Promise.all([
+          api.get(`/menu/items/${restaurantId}`),
+          api.get(`/tables/${restaurantId}`),
+        ]);
 
-      setMenuItems(
-        menuResponse.data.data
-      );
-
-      setTables(
-        tablesResponse.data.data
-      );
+      setMenuItems(menuResponse.data.data || []);
+      setTables(tablesResponse.data.data || []);
     } catch (error) {
       console.error(error);
     } finally {
@@ -99,6 +87,8 @@ export default function PosPage() {
   }, []);
 
   const addToCart = (item: MenuItem) => {
+    setSuccessMessage("");
+
     setCart((prev) => {
       const existing = prev.find(
         (p) => p.id === item.id
@@ -109,8 +99,7 @@ export default function PosPage() {
           p.id === item.id
             ? {
                 ...p,
-                quantity:
-                  p.quantity + 1,
+                quantity: p.quantity + 1,
               }
             : p
         );
@@ -128,58 +117,43 @@ export default function PosPage() {
     });
   };
 
-  const increaseQuantity = (
-    id: string
-  ) => {
+  const increaseQuantity = (id: string) => {
     setCart((prev) =>
       prev.map((item) =>
         item.id === id
           ? {
               ...item,
-              quantity:
-                item.quantity + 1,
+              quantity: item.quantity + 1,
             }
           : item
       )
     );
   };
 
-  const decreaseQuantity = (
-    id: string
-  ) => {
+  const decreaseQuantity = (id: string) => {
     setCart((prev) =>
       prev
         .map((item) =>
           item.id === id
             ? {
                 ...item,
-                quantity:
-                  item.quantity - 1,
+                quantity: item.quantity - 1,
               }
             : item
         )
-        .filter(
-          (item) =>
-            item.quantity > 0
-        )
+        .filter((item) => item.quantity > 0)
     );
   };
 
-  const removeItem = (
-    id: string
-  ) => {
+  const removeItem = (id: string) => {
     setCart((prev) =>
-      prev.filter(
-        (item) => item.id !== id
-      )
+      prev.filter((item) => item.id !== id)
     );
   };
 
   const subtotal = useMemo(() => {
     return cart.reduce(
-      (sum, item) =>
-        sum +
-        item.price * item.quantity,
+      (sum, item) => sum + item.price * item.quantity,
       0
     );
   }, [cart]);
@@ -190,23 +164,38 @@ export default function PosPage() {
 
   const createOrder = async () => {
     try {
-      if (!selectedTable) {
-        alert("Please select a table");
+      setSuccessMessage("");
+
+      if (!restaurantId) {
+        alert("Restaurant ID missing. Please login again.");
+        return;
+      }
+
+      if (!user?.id) {
+        alert("User ID missing. Please login again.");
         return;
       }
 
       if (cart.length === 0) {
-        alert(
-          "Please add items to cart"
-        );
+        alert("Please add items to cart");
         return;
       }
 
+      if (orderType === "DINE_IN" && !selectedTable) {
+        alert("Please select a table for dine-in order");
+        return;
+      }
+
+      setCreating(true);
+
       const payload = {
         restaurantId,
-        tableId: selectedTable,
+        tableId:
+          orderType === "DINE_IN"
+            ? selectedTable
+            : null,
         createdById: user.id,
-        type: "DINE_IN",
+        type: orderType,
 
         items: cart.map((item) => ({
           menuItemId: item.id,
@@ -224,10 +213,10 @@ export default function PosPage() {
       );
 
       setCart([]);
-
       setSelectedTable("");
+      setOrderType("TAKEAWAY");
 
-      fetchData();
+      await fetchData();
     } catch (error: any) {
       console.error(error);
 
@@ -235,6 +224,8 @@ export default function PosPage() {
         error?.response?.data?.message ||
           "Failed to create order"
       );
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -250,9 +241,7 @@ export default function PosPage() {
     <div>
       <div className="flex items-center gap-3 mb-6">
         <button
-          onClick={() =>
-            navigate("/dashboard")
-          }
+          onClick={() => navigate("/dashboard")}
           className="p-2 rounded-lg bg-white border"
         >
           <ArrowLeft size={18} />
@@ -264,7 +253,7 @@ export default function PosPage() {
           </h1>
 
           <p className="text-slate-500">
-            Create and manage orders
+            Create and manage QSR, takeaway, delivery, and dine-in orders
           </p>
         </div>
       </div>
@@ -273,75 +262,139 @@ export default function PosPage() {
         <div className="xl:col-span-2">
           <div className="mb-8">
             <h2 className="text-xl font-bold mb-4">
-              Select Table
+              Order Type
             </h2>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {tables.map((table) => (
-                <button
-                  key={table.id}
-                  onClick={() =>
-                    setSelectedTable(
-                      table.id
-                    )
-                  }
-                  className={`p-4 rounded-2xl border text-left ${
-                    selectedTable ===
-                    table.id
-                      ? "border-slate-900 bg-slate-900 text-white"
-                      : "bg-white"
-                  }`}
-                >
-                  <h3 className="font-bold">
-                    {table.name}
-                  </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {(["TAKEAWAY", "DINE_IN", "DELIVERY"] as OrderType[]).map(
+                (type) => (
+                  <button
+                    key={type}
+                    onClick={() => {
+                      setOrderType(type);
 
-                  <p className="text-sm mt-1">
-                    {table.status}
-                  </p>
-                </button>
-              ))}
+                      if (type !== "DINE_IN") {
+                        setSelectedTable("");
+                      }
+                    }}
+                    className={`p-4 rounded-2xl border text-left ${
+                      orderType === type
+                        ? "border-slate-900 bg-slate-900 text-white"
+                        : "bg-white"
+                    }`}
+                  >
+                    <h3 className="font-bold">
+                      {type === "TAKEAWAY"
+                        ? "Takeaway"
+                        : type === "DINE_IN"
+                        ? "Dine In"
+                        : "Delivery"}
+                    </h3>
+
+                    <p className="text-sm mt-1 opacity-80">
+                      {type === "TAKEAWAY"
+                        ? "Counter / QSR order"
+                        : type === "DINE_IN"
+                        ? "Table service order"
+                        : "Delivery order"}
+                    </p>
+                  </button>
+                )
+              )}
             </div>
           </div>
+
+          {orderType === "DINE_IN" && (
+            <div className="mb-8">
+              <h2 className="text-xl font-bold mb-4">
+                Select Table
+              </h2>
+
+              {tables.length === 0 ? (
+                <div className="rounded-2xl border bg-white p-5 text-slate-500">
+                  No tables found. Add tables from the Tables module, or use
+                  Takeaway/Delivery for QSR orders.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {tables.map((table) => {
+                    const isOccupied =
+                      table.status === "OCCUPIED";
+
+                    return (
+                      <button
+                        key={table.id}
+                        disabled={isOccupied}
+                        onClick={() =>
+                          setSelectedTable(table.id)
+                        }
+                        className={`p-4 rounded-2xl border text-left transition ${
+                          selectedTable === table.id
+                            ? "border-slate-900 bg-slate-900 text-white"
+                            : "bg-white"
+                        } ${
+                          isOccupied
+                            ? "opacity-50 cursor-not-allowed"
+                            : "hover:border-slate-900"
+                        }`}
+                      >
+                        <h3 className="font-bold">
+                          {table.name}
+                        </h3>
+
+                        <p className="text-sm mt-1">
+                          {table.status}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <h2 className="text-xl font-bold mb-4">
               Menu Items
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {menuItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white p-5 rounded-2xl border"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-bold text-lg">
-                        {item.name}
-                      </h3>
+            {menuItems.length === 0 ? (
+              <div className="rounded-2xl border bg-white p-8 text-slate-500">
+                No menu items found. Add menu items first.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {menuItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="bg-white p-5 rounded-2xl border"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold text-lg">
+                          {item.name}
+                        </h3>
 
-                      <p className="text-sm text-slate-500 mt-1">
-                        {item.description}
-                      </p>
+                        <p className="text-sm text-slate-500 mt-1">
+                          {item.description}
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => addToCart(item)}
+                        className="bg-slate-900 text-white p-2 rounded-lg"
+                      >
+                        <Plus size={18} />
+                      </button>
                     </div>
 
-                    <button
-                      onClick={() =>
-                        addToCart(item)
-                      }
-                      className="bg-slate-900 text-white p-2 rounded-lg"
-                    >
-                      <Plus size={18} />
-                    </button>
+                    <div className="mt-4 text-xl font-bold">
+                      ₹{item.price}
+                    </div>
                   </div>
-
-                  <div className="mt-4 text-xl font-bold">
-                    ₹{item.price}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -349,12 +402,28 @@ export default function PosPage() {
           <div className="flex items-center gap-3 mb-6">
             <ShoppingCart size={24} />
 
-            <h2 className="text-2xl font-bold">
-              Cart
-            </h2>
+            <div>
+              <h2 className="text-2xl font-bold">
+                Cart
+              </h2>
+
+              <p className="text-sm text-slate-500">
+                {orderType === "TAKEAWAY"
+                  ? "Takeaway"
+                  : orderType === "DINE_IN"
+                  ? "Dine In"
+                  : "Delivery"}
+              </p>
+            </div>
           </div>
 
           <div className="space-y-4">
+            {cart.length === 0 && (
+              <p className="text-sm text-slate-500">
+                No items in cart.
+              </p>
+            )}
+
             {cart.map((item) => (
               <div
                 key={item.id}
@@ -372,9 +441,7 @@ export default function PosPage() {
                   </div>
 
                   <button
-                    onClick={() =>
-                      removeItem(item.id)
-                    }
+                    onClick={() => removeItem(item.id)}
                     className="text-red-500"
                   >
                     <Trash2 size={18} />
@@ -383,26 +450,16 @@ export default function PosPage() {
 
                 <div className="flex items-center gap-3 mt-3">
                   <button
-                    onClick={() =>
-                      decreaseQuantity(
-                        item.id
-                      )
-                    }
+                    onClick={() => decreaseQuantity(item.id)}
                     className="p-1 border rounded"
                   >
                     <Minus size={16} />
                   </button>
 
-                  <span>
-                    {item.quantity}
-                  </span>
+                  <span>{item.quantity}</span>
 
                   <button
-                    onClick={() =>
-                      increaseQuantity(
-                        item.id
-                      )
-                    }
+                    onClick={() => increaseQuantity(item.id)}
                     className="p-1 border rounded"
                   >
                     <Plus size={16} />
@@ -416,33 +473,28 @@ export default function PosPage() {
             <div className="flex justify-between">
               <span>Subtotal</span>
 
-              <span>
-                ₹{subtotal.toFixed(2)}
-              </span>
+              <span>₹{subtotal.toFixed(2)}</span>
             </div>
 
             <div className="flex justify-between">
               <span>Tax (5%)</span>
 
-              <span>
-                ₹{tax.toFixed(2)}
-              </span>
+              <span>₹{tax.toFixed(2)}</span>
             </div>
 
             <div className="flex justify-between text-xl font-bold pt-3 border-t">
               <span>Total</span>
 
-              <span>
-                ₹{total.toFixed(2)}
-              </span>
+              <span>₹{total.toFixed(2)}</span>
             </div>
           </div>
 
           <button
             onClick={createOrder}
-            className="w-full mt-6 bg-slate-900 text-white py-4 rounded-2xl font-semibold hover:bg-slate-800"
+            disabled={creating}
+            className="w-full mt-6 bg-slate-900 text-white py-4 rounded-2xl font-semibold hover:bg-slate-800 disabled:opacity-60"
           >
-            Create Order
+            {creating ? "Creating..." : "Create Order"}
           </button>
 
           {successMessage && (

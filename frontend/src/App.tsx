@@ -33,6 +33,8 @@ import PurchaseEntryPage from "./modules/purchases/PurchaseEntryPage";
 
 import AnalyticsPage from "./modules/analytics/AnalyticsPage";
 
+import RecipesPage from "./modules/recipes/RecipesPage";
+
 function ProtectedRoute({
   children,
 }: {
@@ -86,6 +88,13 @@ export default function App() {
             path="/dashboard/menu"
             element={
               <MenuPage />
+            }
+          />
+
+          <Route
+            path="/dashboard/recipes"
+            element={
+              <RecipesPage />
             }
           />
 

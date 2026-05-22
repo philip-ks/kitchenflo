@@ -3,11 +3,13 @@ import { Request, Response } from "express";
 import {
   registerUser,
   loginUser,
+  loginWithGoogle,
 } from "./auth.service";
 
 import {
   registerSchema,
   loginSchema,
+  googleLoginSchema,
 } from "./auth.schema";
 
 export const register = async (
@@ -41,10 +43,11 @@ export const login = async (
     const validatedData =
       loginSchema.parse(req.body);
 
-    const result = await loginUser(
-      validatedData.email,
-      validatedData.password
-    );
+    const result =
+      await loginUser(
+        validatedData.email,
+        validatedData.password
+      );
 
     res.json({
       success: true,
@@ -54,6 +57,33 @@ export const login = async (
     res.status(400).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+
+export const googleLogin = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const validatedData =
+      googleLoginSchema.parse(req.body);
+
+    const result =
+      await loginWithGoogle(
+        validatedData.credential
+      );
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message:
+        error.message ||
+        "Google login failed",
     });
   }
 };

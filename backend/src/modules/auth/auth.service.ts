@@ -9,51 +9,49 @@ import { generateToken } from "../../services/jwt.service";
 
 import { sanitizeUser } from "../../utils/sanitize";
 
-const registerUser = async (
-  data: any
-) => {
-  // Hash password
-  const hashedPassword =
-    await hashPassword(data.password);
+import { OAuth2Client } from "google-auth-library";
 
-  // Create restaurant
-  const restaurant =
-    await prisma.restaurant.create({
-      data: {
-        name: `${data.name}'s Restaurant`,
-
+const registerUser = async (data: any) => {
+  const existingUser =
+    await prisma.user.findUnique({
+      where: {
         email: data.email,
       },
     });
 
-  // Create user
-  const user = await prisma.user.create({
-    data: {
-      name: data.name,
+  if (existingUser) {
+    throw new Error("User already exists");
+  }
 
-      email: data.email,
+  const hashedPassword =
+    await hashPassword(data.password);
 
-      password: hashedPassword,
+  const restaurant =
+    await prisma.restaurant.create({
+      data: {
+        name: `${data.name}'s Restaurant`,
+        email: data.email,
+      },
+    });
 
-      role: data.role,
+  const user =
+    await prisma.user.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        password: hashedPassword,
+        role: data.role,
+        restaurantId: restaurant.id,
+      },
+    });
 
-      restaurantId: restaurant.id,
-    },
-  });
-
-  // Return secure response
   return {
     success: true,
-
     user: sanitizeUser(user),
-
     restaurant,
-
     token: generateToken({
       id: user.id,
-
       role: user.role,
-
       restaurantId: restaurant.id,
     }),
   };
@@ -63,18 +61,17 @@ const loginUser = async (
   email: string,
   password: string
 ) => {
-  // Find user
-  const user = await prisma.user.findUnique({
-    where: {
-      email,
-    },
-  });
+  const user =
+    await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
 
   if (!user) {
     throw new Error("User not found");
   }
 
-  // Validate password
   const validPassword =
     await comparePassword(
       password,
@@ -85,17 +82,100 @@ const loginUser = async (
     throw new Error("Invalid credentials");
   }
 
-  // Return secure response
   return {
     success: true,
-
     user: sanitizeUser(user),
-
     token: generateToken({
       id: user.id,
-
       role: user.role,
+      restaurantId: user.restaurantId,
+    }),
+  };
+};
 
+const loginWithGoogle = async (
+  credential: string
+) => {
+  const googleClientId =
+    process.env.GOOGLE_CLIENT_ID;
+
+  if (!googleClientId) {
+    throw new Error(
+      "Google Client ID is not configured"
+    );
+  }
+
+  console.log(
+    "Backend GOOGLE_CLIENT_ID:",
+    googleClientId
+  );
+
+  const googleClient =
+    new OAuth2Client(googleClientId);
+
+  const ticket =
+    await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: googleClientId,
+    });
+
+  const payload = ticket.getPayload();
+
+  if (!payload?.email) {
+    throw new Error(
+      "Google account email not found"
+    );
+  }
+
+  const email =
+    payload.email.toLowerCase();
+
+  const name =
+    payload.name ||
+    email.split("@")[0];
+
+  let user =
+    await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+  let restaurant = null;
+
+  if (!user) {
+    const randomPassword =
+      await hashPassword(
+        `google_${Date.now()}_${email}`
+      );
+
+    restaurant =
+      await prisma.restaurant.create({
+        data: {
+          name: `${name}'s Restaurant`,
+          email,
+        },
+      });
+
+    user =
+      await prisma.user.create({
+        data: {
+          name,
+          email,
+          password: randomPassword,
+          role: "OWNER",
+          restaurantId: restaurant.id,
+        },
+      });
+  }
+
+  return {
+    success: true,
+    user: sanitizeUser(user),
+    restaurant,
+    token: generateToken({
+      id: user.id,
+      role: user.role,
       restaurantId: user.restaurantId,
     }),
   };
@@ -104,4 +184,5 @@ const loginUser = async (
 export {
   registerUser,
   loginUser,
+  loginWithGoogle,
 };

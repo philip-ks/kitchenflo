@@ -15,3 +15,7 @@ export const loginSchema = z.object({
 
   password: z.string(),
 });
+
+export const googleLoginSchema = z.object({
+  credential: z.string().min(10),
+});
