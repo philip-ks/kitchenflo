@@ -14,6 +14,7 @@ import {
   Package,
   Utensils,
   LogIn,
+  Smartphone,
 } from "lucide-react";
 
 import { api } from "../../services/api";
@@ -26,6 +27,11 @@ export default function LoginPage() {
   const [email, setEmail] = useState("philip2@test.com");
   const [password, setPassword] = useState("123456");
   const [showPassword, setShowPassword] = useState(false);
+
+  const [phone, setPhone] = useState("+91");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpMessage, setOtpMessage] = useState("");
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -155,6 +161,92 @@ export default function LoginPage() {
           err?.message ||
           "Microsoft login failed."
       );
+    }
+  };
+
+  const handleGitHubLogin = () => {
+    const githubClientId =
+      import.meta.env.VITE_GITHUB_CLIENT_ID;
+
+    const githubRedirectUri =
+      import.meta.env.VITE_GITHUB_REDIRECT_URI;
+
+    if (!githubClientId || !githubRedirectUri) {
+      setError("GitHub login is not configured.");
+      return;
+    }
+
+    const params = new URLSearchParams({
+      client_id: githubClientId,
+      redirect_uri: githubRedirectUri,
+      scope: "read:user user:email",
+    });
+
+    window.location.href =
+      `https://github.com/login/oauth/authorize?${params.toString()}`;
+  };
+
+  const handleSendOtp = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      setOtpMessage("");
+
+      if (!phone.trim() || phone.trim().length < 8) {
+        setError("Please enter a valid mobile number.");
+        return;
+      }
+
+      await api.post("/auth/send-otp", {
+        phone: phone.trim(),
+      });
+
+      setOtpSent(true);
+      setOtpMessage(
+        "OTP sent. For development, check the backend terminal."
+      );
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message ||
+          "Failed to send OTP."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      setOtpMessage("");
+
+      if (!phone.trim()) {
+        setError("Phone number is required.");
+        return;
+      }
+
+      if (!otp.trim()) {
+        setError("OTP is required.");
+        return;
+      }
+
+      const response = await api.post("/auth/verify-otp", {
+        phone: phone.trim(),
+        otp: otp.trim(),
+      });
+
+      const token = response.data.data.token;
+      const user = response.data.data.user;
+
+      saveSession(token, user);
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message ||
+          "OTP verification failed."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -315,6 +407,84 @@ export default function LoginPage() {
                   <LogIn size={18} />
                   Continue with Microsoft
                 </button>
+
+                <button
+                  type="button"
+                  onClick={handleGitHubLogin}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  <span className="font-bold">
+                    GH
+                  </span>
+                  Continue with GitHub
+                </button>
+              </div>
+
+              <div className="mb-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <Smartphone size={18} className="text-slate-700" />
+
+                  <h3 className="text-sm font-semibold text-slate-800">
+                    Login with Mobile OTP
+                  </h3>
+                </div>
+
+                <div className="space-y-3">
+                  <input
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    type="tel"
+                    placeholder="+919999999999"
+                  />
+
+                  {otpSent && (
+                    <input
+                      className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      type="text"
+                      placeholder="Enter OTP"
+                    />
+                  )}
+
+                  {!otpSent ? (
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      disabled={loading}
+                      className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {loading ? "Sending OTP..." : "Send OTP"}
+                    </button>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={handleVerifyOtp}
+                        disabled={loading}
+                        className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {loading ? "Verifying..." : "Verify OTP"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleSendOtp}
+                        disabled={loading}
+                        className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Resend
+                      </button>
+                    </div>
+                  )}
+
+                  {otpMessage && (
+                    <p className="text-xs text-emerald-700">
+                      {otpMessage}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="mb-5 flex items-center gap-3">

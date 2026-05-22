@@ -23,3 +23,17 @@ export const googleLoginSchema = z.object({
 export const microsoftLoginSchema = z.object({
   credential: z.string().min(10),
 });
+
+export const githubLoginSchema = z.object({
+  code: z.string().min(5),
+});
+
+export const sendOtpSchema = z.object({
+  phone: z.string().min(8),
+});
+
+export const verifyOtpSchema = z.object({
+  phone: z.string().min(8),
+
+  otp: z.string().min(4),
+});

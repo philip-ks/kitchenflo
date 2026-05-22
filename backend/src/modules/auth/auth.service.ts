@@ -12,7 +12,10 @@ import { sanitizeUser } from "../../utils/sanitize";
 import { OAuth2Client } from "google-auth-library";
 
 import jwt from "jsonwebtoken";
+
 import jwksClient from "jwks-rsa";
+
+import axios from "axios";
 
 const registerUser = async (data: any) => {
   const existingUser =
@@ -223,15 +226,9 @@ const verifyMicrosoftToken = async (
     );
   }
 
-  const tenantForKeys =
-    microsoftTenantId === "common"
-      ? "common"
-      : microsoftTenantId;
-
   const client =
     jwksClient({
-      jwksUri:
-        `https://login.microsoftonline.com/${tenantForKeys}/discovery/v2.0/keys`,
+      jwksUri: `https://login.microsoftonline.com/${microsoftTenantId}/discovery/v2.0/keys`,
     });
 
   const key =
@@ -297,9 +294,129 @@ const loginWithMicrosoft = async (
   };
 };
 
+const loginWithGitHub = async (
+  code: string
+) => {
+  const githubClientId =
+    process.env.GITHUB_CLIENT_ID;
+
+  const githubClientSecret =
+    process.env.GITHUB_CLIENT_SECRET;
+
+  const githubRedirectUri =
+    process.env.GITHUB_REDIRECT_URI;
+
+  if (
+    !githubClientId ||
+    !githubClientSecret ||
+    !githubRedirectUri
+  ) {
+    throw new Error(
+      "GitHub OAuth is not configured"
+    );
+  }
+
+  const tokenResponse =
+    await axios.post(
+      "https://github.com/login/oauth/access_token",
+      {
+        client_id: githubClientId,
+        client_secret: githubClientSecret,
+        code,
+        redirect_uri: githubRedirectUri,
+      },
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+
+  const accessToken =
+    tokenResponse.data.access_token;
+
+  if (!accessToken) {
+    throw new Error(
+      tokenResponse.data.error_description ||
+        "GitHub access token not received"
+    );
+  }
+
+  const userResponse =
+    await axios.get(
+      "https://api.github.com/user",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/vnd.github+json",
+        },
+      }
+    );
+
+  const emailsResponse =
+    await axios.get(
+      "https://api.github.com/user/emails",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/vnd.github+json",
+        },
+      }
+    );
+
+  const emails =
+    Array.isArray(emailsResponse.data)
+      ? emailsResponse.data
+      : [];
+
+  const primaryEmail =
+    emails.find(
+      (email: any) =>
+        email.primary && email.verified
+    ) ||
+    emails.find(
+      (email: any) =>
+        email.verified
+    );
+
+  const email =
+    primaryEmail?.email?.toLowerCase();
+
+  if (!email) {
+    throw new Error(
+      "Verified GitHub email not found"
+    );
+  }
+
+  const name =
+    userResponse.data.name ||
+    userResponse.data.login ||
+    email.split("@")[0];
+
+  const {
+    user,
+    restaurant,
+  } = await findOrCreateOAuthUser(
+    email,
+    name
+  );
+
+  return {
+    success: true,
+    user: sanitizeUser(user),
+    restaurant,
+    token: generateToken({
+      id: user.id,
+      role: user.role,
+      restaurantId: user.restaurantId,
+    }),
+  };
+};
+
 export {
   registerUser,
   loginUser,
   loginWithGoogle,
   loginWithMicrosoft,
+  loginWithGitHub,
 };

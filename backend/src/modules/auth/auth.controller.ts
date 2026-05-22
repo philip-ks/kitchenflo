@@ -5,13 +5,22 @@ import {
   loginUser,
   loginWithGoogle,
   loginWithMicrosoft,
+  loginWithGitHub,
 } from "./auth.service";
+
+import {
+  sendOtpToPhone,
+  verifyPhoneOtp,
+} from "./otp.service";
 
 import {
   registerSchema,
   loginSchema,
   googleLoginSchema,
   microsoftLoginSchema,
+  githubLoginSchema,
+  sendOtpSchema,
+  verifyOtpSchema,
 } from "./auth.schema";
 
 export const register = async (
@@ -113,6 +122,88 @@ export const microsoftLogin = async (
       message:
         error.message ||
         "Microsoft login failed",
+    });
+  }
+};
+
+export const githubLogin = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const validatedData =
+      githubLoginSchema.parse(req.body);
+
+    const result =
+      await loginWithGitHub(
+        validatedData.code
+      );
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message:
+        error.message ||
+        "GitHub login failed",
+    });
+  }
+};
+
+export const sendOtp = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const validatedData =
+      sendOtpSchema.parse(req.body);
+
+    const result =
+      await sendOtpToPhone(
+        validatedData.phone
+      );
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message:
+        error.message ||
+        "Failed to send OTP",
+    });
+  }
+};
+
+export const verifyOtp = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const validatedData =
+      verifyOtpSchema.parse(req.body);
+
+    const result =
+      await verifyPhoneOtp(
+        validatedData.phone,
+        validatedData.otp
+      );
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message:
+        error.message ||
+        "OTP verification failed",
     });
   }
 };
