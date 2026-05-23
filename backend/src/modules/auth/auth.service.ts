@@ -413,10 +413,49 @@ const loginWithGitHub = async (
   };
 };
 
+
+const loginWithPin = async (
+  restaurantId: string,
+  pin: string
+) => {
+  const user =
+    await prisma.user.findFirst({
+      where: {
+        restaurantId,
+        pin,
+        role: {
+          in: [
+            "MANAGER",
+            "CASHIER",
+            "CHEF",
+            "WAITER",
+          ],
+        },
+      },
+    });
+
+  if (!user) {
+    throw new Error(
+      "Invalid restaurant or PIN"
+    );
+  }
+
+  return {
+    success: true,
+    user: sanitizeUser(user),
+    token: generateToken({
+      id: user.id,
+      role: user.role,
+      restaurantId: user.restaurantId,
+    }),
+  };
+};
+
 export {
   registerUser,
   loginUser,
   loginWithGoogle,
   loginWithMicrosoft,
   loginWithGitHub,
+  loginWithPin,
 };

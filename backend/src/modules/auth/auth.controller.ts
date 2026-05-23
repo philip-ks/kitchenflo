@@ -6,6 +6,7 @@ import {
   loginWithGoogle,
   loginWithMicrosoft,
   loginWithGitHub,
+  loginWithPin,
 } from "./auth.service";
 
 import {
@@ -19,6 +20,7 @@ import {
   googleLoginSchema,
   microsoftLoginSchema,
   githubLoginSchema,
+  pinLoginSchema,
   sendOtpSchema,
   verifyOtpSchema,
 } from "./auth.schema";
@@ -204,6 +206,33 @@ export const verifyOtp = async (
       message:
         error.message ||
         "OTP verification failed",
+    });
+  }
+};
+export const pinLogin = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const validatedData =
+      pinLoginSchema.parse(req.body);
+
+    const result =
+      await loginWithPin(
+        validatedData.restaurantId,
+        validatedData.pin
+      );
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message:
+        error.message ||
+        "PIN login failed",
     });
   }
 };

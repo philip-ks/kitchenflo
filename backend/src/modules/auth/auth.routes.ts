@@ -6,6 +6,7 @@ import {
   googleLogin,
   microsoftLogin,
   githubLogin,
+  pinLogin,
   sendOtp,
   verifyOtp,
 } from "./auth.controller";
@@ -21,6 +22,8 @@ router.post("/google", googleLogin);
 router.post("/microsoft", microsoftLogin);
 
 router.post("/github", githubLogin);
+
+router.post("/pin-login", pinLogin);
 
 router.post("/send-otp", sendOtp);
 

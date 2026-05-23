@@ -37,3 +37,8 @@ export const verifyOtpSchema = z.object({
 
   otp: z.string().min(4),
 });
+export const pinLoginSchema = z.object({
+  restaurantId: z.string().min(5),
+
+  pin: z.string().min(4),
+});
