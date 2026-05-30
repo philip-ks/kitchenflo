@@ -14,6 +14,7 @@ import {
   LineChart,
   BookOpen,
   UserCircle,
+  Users,
 } from "lucide-react";
 
 import {
@@ -33,6 +34,12 @@ const menuItems = [
     label: "Profile",
     icon: UserCircle,
     path: "/dashboard/profile",
+  },
+
+  {
+    label: "Staff",
+    icon: Users,
+    path: "/dashboard/staff",
   },
 
   {

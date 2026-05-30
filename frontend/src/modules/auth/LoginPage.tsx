@@ -15,6 +15,8 @@ import {
   Utensils,
   LogIn,
   Smartphone,
+  KeyRound,
+  Building2,
 } from "lucide-react";
 
 import { api } from "../../services/api";
@@ -24,22 +26,61 @@ export default function LoginPage() {
 
   const { instance } = useMsal();
 
-  const [email, setEmail] = useState("philip2@test.com");
-  const [password, setPassword] = useState("123456");
-  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] =
+    useState("philip2@test.com");
 
-  const [phone, setPhone] = useState("+91");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpMessage, setOtpMessage] = useState("");
+  const [password, setPassword] =
+    useState("123456");
 
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] =
+    useState(false);
 
-  const saveSession = (token: string, user: any) => {
-    localStorage.setItem("kitchenflo_token", token);
-    localStorage.setItem("kitchenflo_user", JSON.stringify(user));
-    localStorage.setItem("kitchenflo_restaurant_id", user.restaurantId);
+  const [phone, setPhone] =
+    useState("+91");
+
+  const [otp, setOtp] =
+    useState("");
+
+  const [otpSent, setOtpSent] =
+    useState(false);
+
+  const [otpMessage, setOtpMessage] =
+    useState("");
+
+  const [pinRestaurantId, setPinRestaurantId] =
+    useState(
+      localStorage.getItem(
+        "kitchenflo_restaurant_id"
+      ) || ""
+    );
+
+  const [staffPin, setStaffPin] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const saveSession = (
+    token: string,
+    user: any
+  ) => {
+    localStorage.setItem(
+      "kitchenflo_token",
+      token
+    );
+
+    localStorage.setItem(
+      "kitchenflo_user",
+      JSON.stringify(user)
+    );
+
+    localStorage.setItem(
+      "kitchenflo_restaurant_id",
+      user.restaurantId
+    );
 
     navigate("/dashboard");
   };
@@ -47,7 +88,8 @@ export default function LoginPage() {
   useEffect(() => {
     const completeMicrosoftLogin = async () => {
       try {
-        const result = await instance.handleRedirectPromise();
+        const result =
+          await instance.handleRedirectPromise();
 
         if (!result?.idToken) {
           return;
@@ -56,16 +98,23 @@ export default function LoginPage() {
         setLoading(true);
         setError("");
 
-        const response = await api.post("/auth/microsoft", {
-          credential: result.idToken,
-        });
+        const response =
+          await api.post("/auth/microsoft", {
+            credential: result.idToken,
+          });
 
-        const token = response.data.data.token;
-        const user = response.data.data.user;
+        const token =
+          response.data.data.token;
+
+        const user =
+          response.data.data.user;
 
         saveSession(token, user);
       } catch (err: any) {
-        console.error("Microsoft redirect login error:", err);
+        console.error(
+          "Microsoft redirect login error:",
+          err
+        );
 
         setError(
           err?.response?.data?.message ||
@@ -81,7 +130,9 @@ export default function LoginPage() {
     completeMicrosoftLogin();
   }, [instance]);
 
-  const handleLogin = async (event: React.FormEvent) => {
+  const handleLogin = async (
+    event: React.FormEvent
+  ) => {
     event.preventDefault();
 
     try {
@@ -98,13 +149,17 @@ export default function LoginPage() {
         return;
       }
 
-      const response = await api.post("/auth/login", {
-        email: email.trim(),
-        password,
-      });
+      const response =
+        await api.post("/auth/login", {
+          email: email.trim(),
+          password,
+        });
 
-      const token = response.data.data.token;
-      const user = response.data.data.user;
+      const token =
+        response.data.data.token;
+
+      const user =
+        response.data.data.user;
 
       saveSession(token, user);
     } catch (err: any) {
@@ -117,22 +172,30 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = async (credential?: string) => {
+  const handleGoogleLogin = async (
+    credential?: string
+  ) => {
     try {
       setLoading(true);
       setError("");
 
       if (!credential) {
-        setError("Google login failed. No credential received.");
+        setError(
+          "Google login failed. No credential received."
+        );
         return;
       }
 
-      const response = await api.post("/auth/google", {
-        credential,
-      });
+      const response =
+        await api.post("/auth/google", {
+          credential,
+        });
 
-      const token = response.data.data.token;
-      const user = response.data.data.user;
+      const token =
+        response.data.data.token;
+
+      const user =
+        response.data.data.user;
 
       saveSession(token, user);
     } catch (err: any) {
@@ -150,11 +213,18 @@ export default function LoginPage() {
       setError("");
 
       await instance.loginRedirect({
-        scopes: ["openid", "profile", "email"],
+        scopes: [
+          "openid",
+          "profile",
+          "email",
+        ],
         prompt: "select_account",
       });
     } catch (err: any) {
-      console.error("Microsoft login error:", err);
+      console.error(
+        "Microsoft login error:",
+        err
+      );
 
       setError(
         err?.errorMessage ||
@@ -171,16 +241,22 @@ export default function LoginPage() {
     const githubRedirectUri =
       import.meta.env.VITE_GITHUB_REDIRECT_URI;
 
-    if (!githubClientId || !githubRedirectUri) {
-      setError("GitHub login is not configured.");
+    if (
+      !githubClientId ||
+      !githubRedirectUri
+    ) {
+      setError(
+        "GitHub login is not configured."
+      );
       return;
     }
 
-    const params = new URLSearchParams({
-      client_id: githubClientId,
-      redirect_uri: githubRedirectUri,
-      scope: "read:user user:email",
-    });
+    const params =
+      new URLSearchParams({
+        client_id: githubClientId,
+        redirect_uri: githubRedirectUri,
+        scope: "read:user user:email",
+      });
 
     window.location.href =
       `https://github.com/login/oauth/authorize?${params.toString()}`;
@@ -192,8 +268,13 @@ export default function LoginPage() {
       setError("");
       setOtpMessage("");
 
-      if (!phone.trim() || phone.trim().length < 8) {
-        setError("Please enter a valid mobile number.");
+      if (
+        !phone.trim() ||
+        phone.trim().length < 8
+      ) {
+        setError(
+          "Please enter a valid mobile number."
+        );
         return;
       }
 
@@ -202,6 +283,7 @@ export default function LoginPage() {
       });
 
       setOtpSent(true);
+
       setOtpMessage(
         "OTP sent. For development, check the backend terminal."
       );
@@ -222,7 +304,9 @@ export default function LoginPage() {
       setOtpMessage("");
 
       if (!phone.trim()) {
-        setError("Phone number is required.");
+        setError(
+          "Phone number is required."
+        );
         return;
       }
 
@@ -231,13 +315,17 @@ export default function LoginPage() {
         return;
       }
 
-      const response = await api.post("/auth/verify-otp", {
-        phone: phone.trim(),
-        otp: otp.trim(),
-      });
+      const response =
+        await api.post("/auth/verify-otp", {
+          phone: phone.trim(),
+          otp: otp.trim(),
+        });
 
-      const token = response.data.data.token;
-      const user = response.data.data.user;
+      const token =
+        response.data.data.token;
+
+      const user =
+        response.data.data.user;
 
       saveSession(token, user);
     } catch (err: any) {
@@ -250,10 +338,71 @@ export default function LoginPage() {
     }
   };
 
+  const handlePinLogin = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      if (!pinRestaurantId.trim()) {
+        setError(
+          "Restaurant ID is required for staff PIN login."
+        );
+        return;
+      }
+
+      if (!staffPin.trim()) {
+        setError(
+          "Staff PIN is required."
+        );
+        return;
+      }
+
+      const response =
+        await api.post("/auth/pin-login", {
+          restaurantId:
+            pinRestaurantId.trim(),
+          pin: staffPin.trim(),
+        });
+
+      const token =
+        response.data.data.token;
+
+      const user =
+        response.data.data.user;
+
+      saveSession(token, user);
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message ||
+          "PIN login failed."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const useDemoLogin = () => {
     setEmail("philip2@test.com");
     setPassword("123456");
     setError("");
+  };
+
+  const useCurrentRestaurantId = () => {
+    const storedRestaurantId =
+      localStorage.getItem(
+        "kitchenflo_restaurant_id"
+      );
+
+    if (storedRestaurantId) {
+      setPinRestaurantId(
+        storedRestaurantId
+      );
+      setError("");
+    } else {
+      setError(
+        "No restaurant ID found on this device. Login once as owner first or paste the restaurant ID."
+      );
+    }
   };
 
   return (
@@ -291,20 +440,16 @@ export default function LoginPage() {
               </h2>
 
               <p className="mt-6 text-lg leading-8 text-slate-300">
-                KitchenFlo connects billing, kitchen operations, inventory
-                deduction, recipe costing, procurement intelligence, and
-                analytics into one restaurant OS.
+                KitchenFlo connects billing, kitchen operations, inventory deduction, recipe costing, procurement intelligence, and analytics into one restaurant OS.
               </p>
             </div>
 
             <div className="mt-12 grid max-w-xl grid-cols-2 gap-4">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <Utensils className="mb-4 text-emerald-300" />
-
                 <h3 className="font-semibold">
                   Fast POS
                 </h3>
-
                 <p className="mt-2 text-sm text-slate-400">
                   QSR, takeaway, dine-in, and delivery-ready order flow.
                 </p>
@@ -312,11 +457,9 @@ export default function LoginPage() {
 
               <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <Package className="mb-4 text-emerald-300" />
-
                 <h3 className="font-semibold">
                   Inventory Intelligence
                 </h3>
-
                 <p className="mt-2 text-sm text-slate-400">
                   Recipe-based stock deduction and low-stock visibility.
                 </p>
@@ -324,11 +467,9 @@ export default function LoginPage() {
 
               <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <BarChart3 className="mb-4 text-emerald-300" />
-
                 <h3 className="font-semibold">
                   Profit Analytics
                 </h3>
-
                 <p className="mt-2 text-sm text-slate-400">
                   Food cost, margin, consumption, and procurement insights.
                 </p>
@@ -336,25 +477,22 @@ export default function LoginPage() {
 
               <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <ShieldCheck className="mb-4 text-emerald-300" />
-
                 <h3 className="font-semibold">
                   Secure Access
                 </h3>
-
                 <p className="mt-2 text-sm text-slate-400">
-                  JWT authentication with restaurant-specific data access.
+                  Owner, manager, cashier, chef, and waiter access.
                 </p>
               </div>
             </div>
           </div>
 
           <div className="relative z-10 text-sm text-slate-500">
-            © {new Date().getFullYear()} KitchenFlo. Built for modern
-            restaurants.
+            © {new Date().getFullYear()} KitchenFlo. Built for modern restaurants.
           </div>
         </section>
 
-        <section className="flex items-center justify-center bg-slate-100 px-5 py-10 text-slate-900">
+        <section className="flex items-start justify-center bg-slate-100 px-5 py-10 text-slate-900 overflow-y-auto">
           <div className="w-full max-w-md">
             <div className="mb-8 text-center lg:hidden">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-white">
@@ -381,18 +519,21 @@ export default function LoginPage() {
                 </h2>
 
                 <p className="mt-2 text-sm text-slate-500">
-                  Access your restaurant dashboard, POS, kitchen, inventory,
-                  and analytics.
+                  Access your restaurant dashboard, POS, kitchen, inventory, and analytics.
                 </p>
               </div>
 
               <div className="mb-5">
                 <GoogleLogin
                   onSuccess={(credentialResponse) => {
-                    handleGoogleLogin(credentialResponse.credential);
+                    handleGoogleLogin(
+                      credentialResponse.credential
+                    );
                   }}
                   onError={() => {
-                    setError("Google login failed.");
+                    setError(
+                      "Google login failed."
+                    );
                   }}
                   width="100%"
                   text="continue_with"
@@ -422,6 +563,79 @@ export default function LoginPage() {
 
               <div className="mb-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="mb-3 flex items-center gap-2">
+                  <KeyRound size={18} className="text-slate-700" />
+
+                  <h3 className="text-sm font-semibold text-slate-800">
+                    Staff PIN Login
+                  </h3>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="relative">
+                    <Building2
+                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+
+                    <input
+                      className="w-full rounded-xl border border-slate-300 px-11 py-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+                      value={pinRestaurantId}
+                      onChange={(e) =>
+                        setPinRestaurantId(e.target.value)
+                      }
+                      type="text"
+                      placeholder="Restaurant ID"
+                    />
+                  </div>
+
+                  <div className="relative">
+                    <KeyRound
+                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+
+                    <input
+                      className="w-full rounded-xl border border-slate-300 px-11 py-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
+                      value={staffPin}
+                      onChange={(e) =>
+                        setStaffPin(e.target.value)
+                      }
+                      type="password"
+                      placeholder="Staff PIN"
+                      maxLength={8}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={handlePinLogin}
+                      disabled={loading}
+                      className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {loading
+                        ? "Signing in..."
+                        : "PIN Login"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={useCurrentRestaurantId}
+                      disabled={loading}
+                      className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Use Saved ID
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-slate-500">
+                    Staff can login quickly using restaurant ID and assigned PIN.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="mb-3 flex items-center gap-2">
                   <Smartphone size={18} className="text-slate-700" />
 
                   <h3 className="text-sm font-semibold text-slate-800">
@@ -433,7 +647,9 @@ export default function LoginPage() {
                   <input
                     className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) =>
+                      setPhone(e.target.value)
+                    }
                     type="tel"
                     placeholder="+919999999999"
                   />
@@ -442,7 +658,9 @@ export default function LoginPage() {
                     <input
                       className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
                       value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
+                      onChange={(e) =>
+                        setOtp(e.target.value)
+                      }
                       type="text"
                       placeholder="Enter OTP"
                     />
@@ -455,7 +673,9 @@ export default function LoginPage() {
                       disabled={loading}
                       className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {loading ? "Sending OTP..." : "Send OTP"}
+                      {loading
+                        ? "Sending OTP..."
+                        : "Send OTP"}
                     </button>
                   ) : (
                     <div className="grid grid-cols-2 gap-3">
@@ -465,7 +685,9 @@ export default function LoginPage() {
                         disabled={loading}
                         className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {loading ? "Verifying..." : "Verify OTP"}
+                        {loading
+                          ? "Verifying..."
+                          : "Verify OTP"}
                       </button>
 
                       <button
@@ -489,11 +711,9 @@ export default function LoginPage() {
 
               <div className="mb-5 flex items-center gap-3">
                 <div className="h-px flex-1 bg-slate-200" />
-
                 <span className="text-xs font-semibold text-slate-400">
                   OR
                 </span>
-
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
 
@@ -512,7 +732,9 @@ export default function LoginPage() {
                     <input
                       className="w-full rounded-xl border border-slate-300 px-11 py-3 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) =>
+                        setEmail(e.target.value)
+                      }
                       type="email"
                       placeholder="owner@restaurant.com"
                       autoComplete="email"
@@ -534,15 +756,25 @@ export default function LoginPage() {
                     <input
                       className="w-full rounded-xl border border-slate-300 px-11 py-3 pr-12 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      type={showPassword ? "text" : "password"}
+                      onChange={(e) =>
+                        setPassword(e.target.value)
+                      }
+                      type={
+                        showPassword
+                          ? "text"
+                          : "password"
+                      }
                       placeholder="Enter password"
                       autoComplete="current-password"
                     />
 
                     <button
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
+                      onClick={() =>
+                        setShowPassword(
+                          !showPassword
+                        )
+                      }
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
                     >
                       {showPassword ? (
@@ -564,7 +796,9 @@ export default function LoginPage() {
                   disabled={loading}
                   className="w-full rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {loading ? "Signing in..." : "Sign In"}
+                  {loading
+                    ? "Signing in..."
+                    : "Sign In"}
                 </button>
               </form>
 

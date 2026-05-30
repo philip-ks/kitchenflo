@@ -27,6 +27,21 @@ enum OrderType {
   DELIVERY
 }
 
+enum OrderSource {
+  ZOMATO
+  SWIGGY
+  WHATSAPP
+  DIRECT
+}
+
+enum DeliveryPartner {
+  ZOMATO
+  SWIGGY
+  IN_HOUSE
+  PICKUP
+  OTHER
+}
+
 enum OrderStatus {
   PENDING
   ACCEPTED
@@ -72,6 +87,18 @@ enum InventoryTransactionType {
   MANUAL_ADJUSTMENT
 }
 
+enum ExpenseCategory {
+  RAW_MATERIALS
+  PACKAGING
+  SALARIES
+  UTILITIES
+  MARKETING
+  AGGREGATOR_COMMISSION
+  RENT
+  MAINTENANCE
+  OTHER
+}
+
 model Restaurant {
   id    String  @id @default(cuid())
   name  String
@@ -82,6 +109,7 @@ model Restaurant {
   updatedAt DateTime @updatedAt
 
   users          User[]
+  brands         Brand[]
   categories     MenuCategory[]
   items          MenuItem[]
   tables         RestaurantTable[]
@@ -89,6 +117,7 @@ model Restaurant {
   kitchenTickets KitchenTicket[]
   invoices       Invoice[]
   payments       Payment[]
+  expenses       Expense[]
 
   ingredients           Ingredient[]
   suppliers             Supplier[]
@@ -96,6 +125,26 @@ model Restaurant {
   inventoryTransactions InventoryTransaction[]
   consumptionLogs       ConsumptionLog[]
   auditLogs             AuditLog[]
+}
+
+model Brand {
+  id String @id @default(cuid())
+
+  name        String
+  description String?
+  active      Boolean @default(true)
+
+  restaurantId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+  menuItems MenuItem[]
+  orders    Order[]
+
+  @@index([restaurantId])
 }
 
 model User {
@@ -147,6 +196,7 @@ model MenuItem {
 
   restaurantId String
   categoryId   String
+  brandId      String?
 
   deletedAt DateTime?
 
@@ -155,12 +205,14 @@ model MenuItem {
 
   restaurant Restaurant   @relation(fields: [restaurantId], references: [id])
   category   MenuCategory @relation(fields: [categoryId], references: [id])
+  brand      Brand?       @relation(fields: [brandId], references: [id])
 
   orderItems OrderItem[]
   recipe     Recipe?
 
   @@index([restaurantId])
   @@index([categoryId])
+  @@index([brandId])
 }
 
 model RestaurantTable {
@@ -187,13 +239,20 @@ model Order {
 
   orderNumber String      @unique
   type        OrderType   @default(DINE_IN)
+  source      OrderSource @default(DIRECT)
   status      OrderStatus @default(PENDING)
+
+  customerName  String?
+  customerPhone String?
+
+  deliveryPartner DeliveryPartner?
 
   totalAmount Float @default(0)
 
   restaurantId String
   tableId      String?
   createdById  String
+  brandId      String?
 
   deletedAt DateTime?
 
@@ -203,14 +262,18 @@ model Order {
   restaurant Restaurant       @relation(fields: [restaurantId], references: [id])
   table      RestaurantTable? @relation(fields: [tableId], references: [id])
   createdBy  User             @relation(fields: [createdById], references: [id])
+  brand      Brand?           @relation(fields: [brandId], references: [id])
 
   items           OrderItem[]
   kitchenTicket   KitchenTicket?
   invoice         Invoice?
   consumptionLogs ConsumptionLog[]
+  expenses        Expense[]
 
   @@index([restaurantId])
   @@index([status])
+  @@index([source])
+  @@index([brandId])
 }
 
 model OrderItem {
@@ -238,6 +301,10 @@ model KitchenTicket {
   ticketNumber String              @unique
   status       KitchenTicketStatus @default(PENDING)
   notes        String?
+
+  slaMinutes Int?
+  startedAt  DateTime?
+  readyAt    DateTime?
 
   restaurantId String
   orderId      String @unique
@@ -298,6 +365,30 @@ model Payment {
   invoice    Invoice    @relation(fields: [invoiceId], references: [id])
 
   @@index([restaurantId])
+}
+
+model Expense {
+  id String @id @default(cuid())
+
+  category ExpenseCategory
+  amount   Float
+  date     DateTime        @default(now())
+
+  recurring Boolean @default(false)
+  notes     String?
+
+  linkedOrderId String?
+  restaurantId  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant  Restaurant @relation(fields: [restaurantId], references: [id])
+  linkedOrder Order?     @relation(fields: [linkedOrderId], references: [id])
+
+  @@index([restaurantId])
+  @@index([category])
+  @@index([linkedOrderId])
 }
 
 model Ingredient {
