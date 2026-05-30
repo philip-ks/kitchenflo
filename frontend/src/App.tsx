@@ -25,6 +25,8 @@ import AnalyticsPage from "./modules/analytics/AnalyticsPage";
 import RecipesPage from "./modules/recipes/RecipesPage";
 import ProfilePage from "./modules/profile/ProfilePage";
 import StaffPage from "./modules/staff/StaffPage";
+import BrandsPage from "./modules/brands/BrandsPage";
+import ExpensesPage from "./modules/expenses/ExpensesPage";
 
 function ProtectedRoute({
   children,
@@ -81,6 +83,16 @@ export default function App() {
           <Route
             path="/dashboard/staff"
             element={<StaffPage />}
+          />
+
+          <Route
+            path="/dashboard/brands"
+            element={<BrandsPage />}
+          />
+
+          <Route
+            path="/dashboard/expenses"
+            element={<ExpensesPage />}
           />
 
           <Route

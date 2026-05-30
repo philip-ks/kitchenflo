@@ -15,6 +15,8 @@ import {
   BookOpen,
   UserCircle,
   Users,
+  Store,
+  ReceiptText,
 } from "lucide-react";
 
 import {
@@ -40,6 +42,18 @@ const menuItems = [
     label: "Staff",
     icon: Users,
     path: "/dashboard/staff",
+  },
+
+  {
+    label: "Brands",
+    icon: Store,
+    path: "/dashboard/brands",
+  },
+
+  {
+    label: "Expenses",
+    icon: ReceiptText,
+    path: "/dashboard/expenses",
   },
 
   {
